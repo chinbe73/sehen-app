@@ -1,0 +1,19 @@
+{
+  "name": "Sehen",
+  "short_name": "Sehen",
+  "description": "Text mit der Kamera lesen und das Hörbuch öffnen.",
+  "lang": "de-CH",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef3f7",
+  "theme_color": "#0b2847",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
