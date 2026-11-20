@@ -1,103 +1,2934 @@
 <!doctype html>
 <html lang="de-CH">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#0b2847"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Sehen"><link rel="manifest" href="manifest.webmanifest">
-<title>Sehen</title>
-<style>
-:root{font-family:system-ui,-apple-system,sans-serif;color:#10253d;background:#eef3f7;font-size:18px;line-height:1.45}*{box-sizing:border-box}body{max-width:920px;min-height:100vh;min-height:100dvh;margin:auto;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));display:flex;flex-direction:column;overflow:hidden}h1{font-size:clamp(2rem,7vw,3.2rem);line-height:1.05;margin:.35em 0 .25em}h2{font-size:1.45rem;margin:.2em 0 .5em}.lead{font-size:1.12rem}.muted{color:#52657a}.small{font-size:.88rem}.hidden{display:none!important}.hero,.panel{border:2px solid #c9d5e2;background:#fff;border-radius:22px;padding:clamp(16px,4vw,24px);margin:14px 0;box-shadow:0 3px 14px #17324d12}.hero{background:linear-gradient(145deg,#0b2847,#174f7c);color:#fff;border:0}.notice{padding:14px 16px;border-radius:14px;background:#e8f2ff;border-left:6px solid #1660a8}.warning{background:#fff3d6;border-left-color:#9a6500}.success{background:#e7f7ea;border-left-color:#16833b}.error{background:#fde9e7;border-left-color:#b42b23}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.actions>*{flex:1 1 220px}button,.button,select,input,textarea{font:inherit;font-size:1rem;border-radius:14px;border:2px solid #91a7bd;background:#fff;color:#10253d;min-height:58px;padding:12px 16px}button,.button{font-weight:750;cursor:pointer;text-decoration:none;text-align:center;display:inline-flex;align-items:center;justify-content:center}.primary{background:#0b4e8a;color:#fff;border-color:#0b4e8a}.secondary{background:#e7f1fa;border-color:#7e9db9}.danger{color:#98251f;border-color:#d79691}button:focus,.button:focus,input:focus,select:focus,textarea:focus{outline:5px solid #f0b429;outline-offset:2px}button:disabled{opacity:.55}label{font-weight:750;display:block;margin-top:12px}input,select,textarea{width:100%;margin-top:6px}textarea{min-height:110px}.step{display:flex;gap:14px;align-items:flex-start}.number{flex:0 0 2.3rem;height:2.3rem;border-radius:50%;display:grid;place-items:center;background:#0b4e8a;color:white;font-weight:850}.result-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.result-buttons button{min-height:50px;padding:8px;font-size:.9rem}.result-buttons button[aria-pressed="true"]{outline:4px solid #f0b429;background:#102f4e;color:#fff}video,#still{display:block;width:100%;max-height:52vh;object-fit:contain;background:#172638;border-radius:14px}#still{display:none;margin-top:12px}.ocr-output{font-size:clamp(1.5rem,5vw,2.5rem);line-height:1.3;white-space:pre-wrap;background:#fffbe6;border:3px solid #9c7800;border-radius:16px;padding:18px;min-height:100px}.status{font-weight:800;background:#e8f2ff;border-radius:12px;padding:13px}.badge{display:inline-block;padding:5px 10px;border-radius:999px;background:#e7edf3;color:#24394e;font-size:.82rem;font-weight:800}.badge.ok{background:#dff3e4;color:#146b30}.badge.no{background:#f8dfdc;color:#97251e}.badge.open{background:#fff0c7;color:#785000}details{border-top:1px solid #d7e0e9;margin-top:18px;padding-top:12px}summary{font-weight:800;cursor:pointer;padding:8px}pre{white-space:pre-wrap;word-break:break-word;background:#edf2f6;padding:14px;border-radius:12px;font-size:.78rem;max-height:260px;overflow:auto}#returnBanner{position:sticky;top:8px;z-index:10;box-shadow:0 8px 24px #152b4050}nav{display:flex;gap:8px;overflow:auto;padding:3px 0 8px}nav a{white-space:nowrap;padding:10px 14px;border-radius:999px;background:#fff;color:#0b4e8a;font-weight:800;text-decoration:none;border:2px solid #b7c7d7}#daily{flex:1;min-height:0;display:flex}#daily .panel{flex:1;min-height:0;margin:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr);gap:12px;overflow:hidden}.daily-actions{display:grid;grid-template-columns:1fr 1fr;gap:14px}.daily-actions button{min-height:96px;font-size:clamp(1.2rem,4vw,1.75rem);border-width:3px}.daily-actions .read{grid-column:1/-1;min-height:120px;background:#075b3b;border-color:#075b3b;color:#fff}.daily-actions .magnify{background:#4a287f;border-color:#4a287f;color:#fff}.daily-actions .book{background:#784200;border-color:#784200;color:#fff}.daily-output{min-height:0;font-size:clamp(1.7rem,6vw,3rem);line-height:1.25;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.daily-video{max-height:25vh;margin:0}body.diagnosis-open{display:block;overflow:auto}body.diagnosis-open #daily{min-height:calc(100vh - 24px)}.magnifier-stage{height:min(62vh,620px);overflow:hidden;background:#000;border-radius:18px;display:grid;place-items:center}.magnifier-stage video{width:100%;height:100%;max-height:none;object-fit:contain;border-radius:0;transform:scale(var(--magnifier-zoom,1));transition:transform .15s}.magnifier-stage video.filter-bw{filter:grayscale(1) contrast(1.75)}.magnifier-stage video.filter-invert{filter:grayscale(1) invert(1) contrast(1.65)}.magnifier-stage video.filter-yellow{filter:grayscale(1) sepia(1) saturate(7) contrast(1.65)}.magnifier-controls{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;margin:14px 0}.magnifier-controls button,.magnifier-controls output{min-height:84px;font-size:clamp(1.5rem,6vw,2.4rem);font-weight:850;border:3px solid #91a7bd;border-radius:14px;display:grid;place-items:center;background:#fff}.magnifier-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.magnifier-actions button{min-height:78px;font-size:1.15rem}body.magnifier-open{max-width:none;margin:0;padding:0;overflow:hidden;background:#000}body.magnifier-open>#returnBanner{display:none}body.magnifier-open #magnifier{position:fixed;inset:0;z-index:100;background:#000;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}body.magnifier-open #magnifier .panel{height:100%;margin:0;padding:8px;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px}body.magnifier-open #magnifier h2{margin:0}body.magnifier-open #magnifierStatus{margin:0;padding:8px 12px}body.magnifier-open .magnifier-stage{height:auto;min-height:0;border-radius:8px}body.magnifier-open .magnifier-controls{margin:0;gap:8px}body.magnifier-open .magnifier-controls button,body.magnifier-open .magnifier-controls output{min-height:68px}body.magnifier-open .magnifier-actions{grid-template-columns:repeat(4,1fr);gap:8px}body.magnifier-open .magnifier-actions button{min-height:64px;padding:8px}@media(max-width:560px){.result-buttons,.daily-actions,.magnifier-actions{grid-template-columns:1fr}.daily-actions .read{grid-column:auto}.panel{padding:16px}.actions>*{flex-basis:100%}.magnifier-stage{height:54vh}body.magnifier-open .magnifier-actions{grid-template-columns:repeat(2,1fr)}body.magnifier-open .magnifier-actions button{font-size:.85rem}}@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
-.scan-stage{position:relative;min-height:0;overflow:hidden;background:#111;border-radius:12px;display:grid;place-items:center}.scan-stage video{width:100%;height:100%;max-height:none;object-fit:contain;border-radius:0}.scan-guide{position:absolute;inset:6%;border:7px solid #ef2b2d;border-radius:8px;pointer-events:none;box-shadow:0 0 0 9999px #00000024}.scan-guide::before{content:attr(data-label);position:absolute;top:-3px;left:50%;transform:translate(-50%,-100%);padding:6px 16px;background:#ef2b2d;color:#fff;font-weight:900;font-size:1.1rem;border-radius:10px 10px 0 0;white-space:nowrap}.scan-actions,.scan-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.scan-actions button,.scan-nav button{min-height:76px;font-size:1.05rem}.scan-actions .capture{grid-column:1/-1;min-height:96px;background:#075b3b;border-color:#075b3b;color:#fff;font-size:1.35rem}.scan-nav{grid-template-columns:1fr auto 1fr}.scan-nav output{min-width:100px;display:grid;place-items:center;font-size:1.2rem;font-weight:900}.scan-result{min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#fffbe6;border:3px solid #9c7800;border-radius:14px;padding:12px}.scan-result img{display:block;width:100%;max-height:32vh;object-fit:contain;background:#172638;border-radius:10px;margin-bottom:14px}.scan-result-text{font-size:clamp(1.6rem,5vw,2.8rem);line-height:1.3;white-space:pre-wrap}.scan-progress{height:14px;width:100%;accent-color:#075b3b}body.scan-open{max-width:none;margin:0;padding:0;overflow:hidden;background:#eef3f7}body.scan-open>#returnBanner{display:none}body.scan-open #scan{position:fixed;inset:0;z-index:100;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}body.scan-open #scan .panel{height:100%;margin:0;padding:8px;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:8px}body.scan-open #scanStatus{margin:0;padding:9px 12px}body.scan-open .scan-actions{margin:0}.daily-actions .scan{background:#9b1c31;border-color:#9b1c31;color:#fff}@media(max-width:560px){.scan-actions button{min-height:64px;font-size:.92rem}.scan-actions .capture{min-height:78px}.scan-guide{inset:4%;border-width:5px}.scan-result img{max-height:25vh}}
-.workflow{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,30%);gap:12px}.workflow-main{min-width:0;min-height:0;position:relative;overflow:hidden}.workflow-actions{min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto}.workflow-actions button{width:100%;min-height:76px;border-width:3px;font-size:clamp(1rem,2.2vw,1.28rem)}.workflow-actions .main-action{min-height:108px;background:#075b3b;border-color:#075b3b;color:#fff;font-size:clamp(1.25rem,3vw,1.65rem)}.camera-stage{height:100%;min-height:260px;position:relative;overflow:hidden;display:grid;place-items:center;background:#111;border-radius:14px}.camera-stage video{width:100%;height:100%;max-height:none;object-fit:contain;border-radius:0}.camera-instruction{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:min(88%,560px);min-height:64px;border:4px solid #fff;background:#075b3bee;color:#fff;font-size:clamp(1rem,2.4vw,1.35rem);font-weight:900;box-shadow:0 4px 18px #0009}.camera-instruction:focus{outline-color:#ffd400}.daily-workflow{min-height:0}.daily-result{height:100%;min-height:0;overflow-y:auto}.daily-home-output{display:none}body.read-open{max-width:none;margin:0;padding:0;overflow:hidden}body.read-open>#returnBanner{display:none}body.read-open #daily{position:fixed;inset:0;z-index:90;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}body.read-open #daily .panel{height:100%;padding:8px;border:0;border-radius:0;box-shadow:none;grid-template-rows:auto minmax(0,1fr)}body.read-open #dailyStatus{margin:0}.scan-workflow{min-height:0}.scan-stage{height:100%;min-height:260px;cursor:pointer}.scan-tap-label{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(88%,560px);padding:12px 16px;border:4px solid #fff;border-radius:14px;background:#075b3bee;color:#fff;font-size:clamp(1rem,2.2vw,1.3rem);font-weight:900;text-align:center;pointer-events:none;box-shadow:0 4px 18px #0009}.scan-side-actions{grid-template-columns:1fr}.scan-side-actions .capture{grid-column:auto}.scan-result{height:100%}.scan-result img{max-height:38vh}.scan-result-actions{min-height:0}.scan-result-actions .scan-nav{grid-template-columns:1fr auto 1fr}.scan-result-actions .scan-actions{grid-template-columns:1fr}.scan-result-actions .scan-actions button{min-height:68px}body.scan-open #scan .panel{grid-template-rows:auto auto minmax(0,1fr)}netlify-drawer,#netlify-drawer,[data-netlify-drawer]{display:none!important}
-@media(orientation:portrait),(max-width:700px){.workflow{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.workflow-actions{order:-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.workflow-actions button,.workflow-actions .main-action{min-height:64px;font-size:1rem}.camera-stage,.scan-stage{min-height:180px}.scan-result-actions .scan-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.scan-result img{max-height:24vh}}
-.scan-workflow{height:100%;align-items:stretch}.scan-workflow>.scan-stage{height:auto}
-body.scan-open #scanStatus{grid-row:1}body.scan-open #scanProgress{grid-row:2}body.scan-open #scanWorkspace{grid-row:3}
-html,body{touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%}body.magnifier-open,body.magnifier-open button,body.magnifier-open output{touch-action:none}
-</style></head>
-<body>
-<div id="returnBanner" class="notice success hidden" role="status" aria-live="assertive"><strong>Zurück bei Sehen.</strong> <span id="returnDetails"></span></div>
-<main id="daily"><section class="panel"><p id="dailyStatus" class="status" role="status" aria-live="assertive">Was möchtest du tun?</p><div id="dailyHome" class="daily-actions"><button id="dailyRead" class="read">📖 SCHNELL LESEN</button><button id="dailyScan" class="scan">▤ GROSSE SEITE</button><button id="dailyMagnifier" class="magnify">🔍 LUPE</button><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button></div><div id="dailyCameraWorkspace" class="workflow daily-workflow hidden"><div class="workflow-main camera-stage"><video id="dailyVideo" playsinline autoplay muted aria-label="Livebild zum Lesen"></video></div><div class="workflow-actions"><button id="dailyCapture" class="main-action">📷 FOTO LESEN</button><button id="dailyCameraClose" class="danger">← SCHLIESSEN</button></div></div><div id="dailyResultWorkspace" class="workflow daily-workflow hidden"><div id="dailyOutput" class="ocr-output daily-output daily-result" tabindex="0" aria-label="Gelesener Text">Der erkannte Text erscheint hier.</div><div class="workflow-actions"><button id="dailyAgain" class="primary" disabled>🔊 NOCHMALS VORLESEN</button><button id="dailyNewText">📷 NEUEN TEXT LESEN</button><button id="dailyStop" class="danger">■ VORLESEN STOPPEN</button><button id="dailyResultClose" class="danger">← SCHLIESSEN</button></div></div></section></main>
-<main id="scan" class="hidden"><section class="panel"><p id="scanStatus" class="status" role="status" aria-live="assertive">Grosse Seite wird vorbereitet …</p><progress id="scanProgress" class="scan-progress hidden" max="100" value="0" aria-label="Fortschritt der Texterkennung"></progress><div id="scanWorkspace" class="workflow scan-workflow"><div id="scanCaptureView" class="workflow-main scan-stage"><video id="scanVideo" playsinline autoplay muted aria-label="Livebild der grossen Seite"></video><div id="scanGuide" class="scan-guide" data-label="BEREICH 1"></div></div><div id="scanResultView" class="workflow-main scan-result hidden" tabindex="0"><img id="scanResultImage" alt="Aufgenommener Seitenbereich"><div id="scanResultText" class="scan-result-text">Der erkannte Text erscheint hier.</div></div><div id="scanCaptureActions" class="workflow-actions scan-actions scan-side-actions"><button id="scanCapture" class="capture main-action">📷 BEREICH AUFNEHMEN</button><button id="scanUndo" disabled>↶ LETZTES LÖSCHEN</button><button id="scanFinish" disabled>✓ FERTIG – ERKENNEN</button><button id="scanCancel" class="danger">← SCHLIESSEN</button></div><div id="scanResultActions" class="workflow-actions scan-result-actions hidden"><div class="scan-nav"><button id="scanPrevious">←</button><output id="scanPosition" aria-live="polite">1 / 1</output><button id="scanNext">→</button></div><div class="scan-actions"><button id="scanSpeak" class="primary">🔊 BEREICH LESEN</button><button id="scanSpeakAll">🔊 ALLES LESEN</button><button id="scanNew">▤ NEUE SEITE</button><button id="scanClose" class="danger">← SCHLIESSEN</button></div></div></div></section></main>
-<main id="magnifier" class="hidden"><section class="panel"><h2>Lupe</h2><p id="magnifierStatus" class="status" role="status" aria-live="assertive">Lupe wird vorbereitet …</p><div class="magnifier-stage"><video id="magnifierVideo" playsinline autoplay muted aria-label="Vergrößertes Livebild"></video></div><div class="magnifier-controls" aria-label="Vergrößerung"><button id="magnifierMinus" aria-label="Weniger vergrößern">−</button><output id="magnifierZoom" aria-live="polite">1×</output><button id="magnifierPlus" aria-label="Stärker vergrößern">+</button></div><div class="magnifier-actions"><button id="magnifierFreeze" class="primary">❄ BILD ANHALTEN</button><button id="magnifierFilter">◐ KONTRAST: FARBE</button><button id="magnifierCamera">↻ KAMERA WECHSELN</button><button id="magnifierClose" class="danger">← LUPE SCHLIESSEN</button></div></section></main>
-<div id="lab" class="hidden">
-<nav aria-label="Machbarkeitstests"><a href="#camera">Kamera</a><a href="#seeingai">Seeing AI</a><a href="#shortcuts">Kurzbefehle</a><a href="#audible">Audible</a><a href="#ocr">Text lesen</a><a href="#results">Ergebnisse</a></nav>
-<section class="panel" id="camera"><div class="step"><span class="number">1</span><div><h2>Kamera und gespeicherte Auswahl</h2><p>Prüft, ob dieselbe Kamera nach einem Neustart wieder verwendet wird.</p></div></div><p id="cameraStatus" class="status" role="status" aria-live="polite">Noch nicht gestartet.</p><label for="cameras">Gefundene Kameras</label><select id="cameras"><option>Noch nicht gesucht</option></select><div class="actions"><button class="primary" id="start">Gespeicherte Kamera starten</button><button id="refresh">Kameras suchen</button><button id="save">Auswahl aktivieren und merken</button></div><p id="saved" class="muted">Keine Kamera gespeichert.</p><video id="video" playsinline autoplay muted aria-label="Livebild der Kamera"></video><div class="actions"><button class="primary" id="photo">Testfoto aufnehmen</button><button id="stop">Kamera stoppen</button><button class="danger" id="forget">Kamerawahl zurücksetzen</button></div><canvas id="photoCanvas" class="hidden"></canvas><img id="still" alt="Aufgenommenes Testfoto"><p id="resolution"></p><div class="result-buttons" data-test="camera"><button data-result="pass">✓ Bestanden</button><button data-result="fail">✕ Nicht bestanden</button><button data-result="open">? Offen</button></div></section>
-<section class="panel" id="seeingai"><div class="step"><span class="number">2</span><div><h2>Foto an Seeing AI übergeben</h2><p>Prüft, ob ein aufgenommenes Foto ohne schwierige Bedienung weitergegeben werden kann.</p></div></div><div class="notice warning"><strong>Entscheidender Punkt:</strong> Für Seeing AI ist keine öffentliche direkte Foto-Schnittstelle dokumentiert. Dieser Test verwendet deshalb die iPad-Teilen-Funktion. Er ist nur bestanden, wenn die Bedienung zuverlässig einfach genug ist.</div><div class="actions"><button class="primary" id="sharePhoto" disabled>Foto teilen</button><a class="button secondary" href="https://aka.ms/SeeingAIiOSDownload">Seeing AI öffnen/installieren</a></div><p id="shareStatus" class="status">Zuerst oben ein Testfoto aufnehmen.</p><div class="result-buttons" data-test="seeingai"><button data-result="pass">✓ Ohne Hilfe möglich</button><button data-result="fail">✕ Zu kompliziert</button><button data-result="open">? Noch testen</button></div></section>
-<section class="panel" id="shortcuts"><div class="step"><span class="number">3</span><div><h2>Kurzbefehl direkt starten</h2><p>Startet einen vorhandenen Apple-Kurzbefehl über sein offizielles URL-Schema.</p></div></div><label for="shortcutName">Genauer Name des Kurzbefehls</label><input id="shortcutName" value="Sehen – Test" autocomplete="off"><div class="actions"><button class="primary" id="runShortcut">Kurzbefehl starten</button></div><p id="shortcutStatus" class="status">Der Kurzbefehl muss auf diesem iPad bereits vorhanden sein.</p><div class="result-buttons" data-test="shortcuts"><button data-result="pass">✓ Gestartet</button><button data-result="fail">✕ Nicht gestartet</button><button data-result="open">? Offen</button></div></section>
-<section class="panel" id="audible"><div class="step"><span class="number">4</span><div><h2>Audible öffnen und abspielen</h2><p>Testet zuerst, ob ein bestimmtes Hörbuch geöffnet wird, und separat, ob es sofort losspielt.</p></div></div><div class="actions"><button class="primary" id="openAudibleApp">Audible öffnen</button></div><label for="audibleId">Audible-Link zum Hörbuch</label><input id="audibleId" placeholder="Vollständigen Audible-Link hier einfügen" autocomplete="off" autocapitalize="off"><p class="small muted">So findest du ihn: Hörbuch in Audible öffnen → Teilen → Link kopieren → hier einfügen. Alternativ funktioniert auch die zehnstellige ASIN aus dem Link, zum Beispiel B0XXXXXXXX.</p><div class="actions"><button id="openAudibleWeb">Dieses Hörbuch öffnen</button><button id="openAudiblePlayer">Direktwiedergabe testen</button></div><p id="audibleStatus" class="status">Beginne mit „Audible öffnen“. Für ein bestimmtes Buch füge danach einfach dessen Link ein.</p><p class="small muted">Der normale Hörbuch-Link öffnet das Buch, startet aber nicht automatisch. Der Direktlink ist nicht öffentlich von Audible dokumentiert und kann auf dem iPad wirkungslos bleiben.</p><h3>Ergebnis: Hörbuch öffnen</h3><div class="result-buttons" data-test="audible"><button data-result="pass">✓ Hörbuch geöffnet</button><button data-result="fail">✕ Nicht geöffnet</button><button data-result="open">? Offen</button></div><h3>Ergebnis: Sofort abspielen</h3><div class="result-buttons" data-test="audibleplay"><button data-result="pass">✓ Spielt sofort</button><button data-result="fail">✕ Startet nicht</button><button data-result="open">? Offen</button></div></section>
-<section class="panel" id="return"><div class="step"><span class="number">5</span><div><h2>Rückkehr zu Sehen</h2><p>Jeder App-Start wird gemessen. Beim Zurückkehren erscheint oben eine grosse Bestätigung.</p></div></div><p id="returnStatus" class="status">Noch kein App-Wechsel gemessen.</p><p class="notice">Auf dem iPad zurückkehren: oben links auf <strong>„Safari“</strong> beziehungsweise <strong>„Sehen“</strong> tippen oder im App-Umschalter Sehen auswählen. Für den Alltag ist „Zum Home-Bildschirm“ als eigenständige Web-App am einfachsten.</p><div class="result-buttons" data-test="return"><button data-result="pass">✓ Rückkehr zuverlässig</button><button data-result="fail">✕ Rückkehr schwierig</button><button data-result="open">? Offen</button></div></section>
-<section class="panel" id="ocr"><div class="step"><span class="number">6</span><div><h2>Text erkennen, gross zeigen und vorlesen</h2><p>Die Verarbeitung läuft lokal im Browser. Das Foto wird nicht hochgeladen.</p></div></div><div class="actions"><button class="primary" id="recognize" disabled>Text im Foto erkennen</button><button id="speak" disabled>Text vorlesen</button><button id="stopSpeak">Vorlesen stoppen</button></div><p id="ocrStatus" class="status" role="status" aria-live="polite">Zuerst oben ein Testfoto aufnehmen.</p><div id="ocrOutput" class="ocr-output" tabindex="0" aria-label="Erkannter Text">Erkannter Text erscheint hier.</div><label for="textSize">Textgrösse</label><input id="textSize" type="range" min="24" max="64" value="40"><div class="result-buttons" data-test="ocr"><button data-result="pass">✓ Gut lesbar</button><button data-result="fail">✕ Nicht zuverlässig</button><button data-result="open">? Offen</button></div></section>
-<section class="panel" id="results"><h2>Testergebnisse</h2><div id="summary" class="grid"></div><label for="notes">Notizen vom iPad-Test</label><textarea id="notes" placeholder="Was hat funktioniert? Wo gab es einen Dialog oder Hilfe nötig?"></textarea><div class="actions"><button id="copyResults" class="primary">Ergebnisse kopieren</button><button id="resetResults" class="danger">Ergebnisse zurücksetzen</button></div><details><summary>Technische Diagnose</summary><pre id="log"></pre></details></section></div>
-<script>
-(()=>{'use strict';
-const $=id=>document.getElementById(id),cameraKey='sehen-camera-v2',resultKey='sehen-spikes-v1',notesKey='sehen-spike-notes-v1',defaultAudible='https://www.audible.de/pd/B0067JVXDG?source_code=ASSORAP0511160006&share_location=library_overflow',magnifierZoomLevels=[1,1.5,2,3,4,6,8],magnifierFilters=[['FARBE',''],['SCHWARZ-WEISS','filter-bw'],['INVERTIERT','filter-invert'],['GELB-SCHWARZ','filter-yellow']];const names={camera:'Kamera bleibt gespeichert',seeingai:'Seeing AI Fotoübergabe',shortcuts:'Kurzbefehl direkt starten',audible:'Audible-Hörbuch öffnen',audibleplay:'Audible sofort abspielen',return:'Rückkehr zu Sehen',ocr:'OCR, Grossschrift und Vorlesen'};let stream=null,devices=[],events=[],ocrWorker=null,cameraBusy=false,magnifierZoomIndex=0,magnifierFrozen=false,magnifierFilterIndex=Math.max(0,Math.min(3,Number(localStorage.getItem('sehen-magnifier-filter'))||0)),scanCaptures=[],scanIndex=0,scanRecognizing=false,speechGeneration=0;
-const readJSON=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}},savedCamera=()=>readJSON(cameraKey,null),results=()=>readJSON(resultKey,{});const log=message=>{events.push('['+new Date().toLocaleTimeString('de-CH')+'] '+message);$('log').textContent=events.slice(-60).join('\n')};const setStatus=(id,message,kind='')=>{const node=$(id);node.textContent=message;node.className='status'+(kind?' '+kind:'');log(message)};const showSaved=()=>{$('saved').textContent=savedCamera()?.label?'Gespeicherte Wahl: '+savedCamera().label:'Keine Kamera gespeichert.'};const stopCamera=()=>{stream?.getTracks().forEach(track=>track.stop());stream=null;['video','dailyVideo','magnifierVideo','scanVideo'].forEach(id=>$(id).srcObject=null)};
-async function findCameras(){try{devices=(await navigator.mediaDevices.enumerateDevices()).filter(device=>device.kind==='videoinput');$('cameras').replaceChildren();devices.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||'Kamera '+(index+1);$('cameras').append(option)});log('Gefundene Kameras: '+(devices.map(d=>d.label||'unbenannt').join('; ')||'keine'));return devices}catch(error){setStatus('cameraStatus','Kamerasuche fehlgeschlagen: '+error.message,'error');return []}}
-async function startCamera(deviceId,facingMode='environment',quiet=false){if(cameraBusy){log('Ein Kamerastart läuft bereits.');return false}cameraBusy=true;['start','refresh','save'].forEach(id=>$(id).disabled=true);stopCamera();if(!navigator.mediaDevices?.getUserMedia){setStatus('cameraStatus','Dieser Browser unterstützt keinen Kamerazugriff.','error');cameraBusy=false;['start','refresh','save'].forEach(id=>$(id).disabled=false);return false}try{setStatus('cameraStatus','Kamerazugriff wird angefordert …');const video=deviceId?{deviceId:{exact:deviceId},width:{ideal:3840},height:{ideal:2160}}:{facingMode:{ideal:facingMode},width:{ideal:3840},height:{ideal:2160}};stream=await navigator.mediaDevices.getUserMedia({audio:false,video});$('video').srcObject=stream;$('dailyVideo').srcObject=stream;$('magnifierVideo').srcObject=stream;$('scanVideo').srcObject=stream;await Promise.allSettled([$('video').play(),$('dailyVideo').play(),$('magnifierVideo').play(),$('scanVideo').play()]);$('dailyVideo').classList.remove('hidden');const track=stream.getVideoTracks()[0],settings=track.getSettings();setStatus('cameraStatus','Kamera läuft: '+(track.label||'Kamera'),'success');$('resolution').textContent='Auflösung: '+settings.width+' × '+settings.height;await findCameras();if(settings.deviceId)$('cameras').value=settings.deviceId;return true}catch(error){if(quiet)log('Gespeicherte Geräte-ID nicht verwendbar: '+error.name);else setStatus('cameraStatus','Kamera nicht verfügbar: '+error.name+' – '+error.message,'error');return false}finally{cameraBusy=false;['start','refresh','save'].forEach(id=>$(id).disabled=false)}}
-async function restoreCamera(){const pref=savedCamera();if(!pref)return startCamera();log('Gespeicherte Kamera wird wiederhergestellt: '+(pref.label||'unbenannt'));if(pref.id&&await startCamera(pref.id,pref.facingMode||'environment',true))return true;if(!await startCamera(null,pref.facingMode||'environment'))return false;const currentId=stream?.getVideoTracks()[0]?.getSettings().deviceId,matching=devices.find(d=>d.label&&d.label===pref.label);if(matching?.deviceId&&matching.deviceId!==currentId){log('Kamera nach Freigabe über den gespeicherten Namen gefunden.');return startCamera(matching.deviceId,pref.facingMode||'environment')}if(!matching)log('Gespeicherter Name nicht gefunden; passende Vorder-/Rückkamera bleibt aktiv.');return true}
-function takePhoto(){const video=$('dailyVideo').videoWidth?$('dailyVideo'):$('video');if(!stream||!video.videoWidth){setStatus('cameraStatus','Bitte zuerst die Kamera starten.','warning');return false}const canvas=$('photoCanvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;canvas.getContext('2d',{alpha:false}).drawImage(video,0,0);$('still').src=canvas.toDataURL('image/jpeg',.92);$('still').style.display='block';$('sharePhoto').disabled=false;$('recognize').disabled=false;setStatus('cameraStatus','Testfoto wurde nur auf diesem Gerät aufgenommen.','success');setStatus('shareStatus','Foto ist bereit zum Teilen.');setStatus('ocrStatus','Foto ist bereit für die Texterkennung.');log('Testfoto lokal aufgenommen: '+canvas.width+' × '+canvas.height);return true}
-const canvasBlob=()=>new Promise((resolve,reject)=>$('photoCanvas').toBlob(blob=>blob?resolve(blob):reject(new Error('Foto konnte nicht erzeugt werden.')),'image/jpeg',.92));async function sharePhoto(){try{const blob=await canvasBlob(),file=new File([blob],'sehen-testfoto.jpg',{type:'image/jpeg'});if(!navigator.share||!navigator.canShare?.({files:[file]}))throw new Error('Das Teilen von Fotos wird hier nicht unterstützt.');await navigator.share({files:[file],title:'Testfoto für Seeing AI'});setStatus('shareStatus','Teilen abgeschlossen. Wurde Seeing AI ohne Hilfe erreicht?','success')}catch(error){setStatus('shareStatus',error.name==='AbortError'?'Teilen wurde abgebrochen.':error.message,error.name==='AbortError'?'warning':'error')}}
-function openExternal(url,target){sessionStorage.setItem('sehen-departure',JSON.stringify({at:Date.now(),target}));log('App-Wechsel gestartet: '+target);location.href=url}function handleReturn(){let stored=null;try{stored=JSON.parse(sessionStorage.getItem('sehen-departure')||'null')}catch{}if(!stored?.at||Date.now()-stored.at>36e5)return;const seconds=Math.max(1,Math.round((Date.now()-stored.at)/1000));$('returnDetails').textContent='Rückkehr von '+stored.target+' nach '+seconds+' Sekunden erkannt.';$('returnBanner').classList.remove('hidden');setStatus('returnStatus','Rückkehr von '+stored.target+' nach '+seconds+' Sekunden erkannt.','success');setDailyMode('home');setStatus('dailyStatus','Zurück bei Sehen.','success');sessionStorage.removeItem('sehen-departure');setTimeout(()=>$('returnBanner').classList.add('hidden'),10000)}
-async function loadOCR(){if(window.Tesseract)return;if(!navigator.onLine)throw new Error('Für das erstmalige Laden der Texterkennung wird Internet benötigt.');if(scanRecognizing)setStatus('scanStatus','Texterkennung wird einmalig geladen …');else{setStatus('ocrStatus','Texterkennung wird einmalig geladen …');setStatus('dailyStatus','Texterkennung wird einmalig geladen …')}await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(new Error('Texterkennung konnte nicht geladen werden.'));document.head.append(script)})}
-function ocrProgress(message){if(message.status!=='recognizing text')return;const percent=Math.round((message.progress||0)*100);if(scanRecognizing){$('scanProgress').value=percent;$('scanStatus').textContent='Text wird erkannt: '+percent+' %'}else{setStatus('ocrStatus','Text wird erkannt: '+percent+' %');setStatus('dailyStatus','Text wird erkannt: '+percent+' %')}}
-async function getOCRWorker(){await loadOCR();if(!ocrWorker){ocrWorker=await Tesseract.createWorker('deu',1,{logger:ocrProgress});await ocrWorker.setParameters({tessedit_pageseg_mode:Tesseract.PSM.AUTO,preserve_interword_spaces:'1'})}return ocrWorker}
-function paragraphText(paragraph){const lines=(paragraph.lines||[]).map(line=>(line.text||'').trim()).filter(Boolean);if(!lines.length&&paragraph.text)lines.push(paragraph.text.trim());let text='';for(const line of lines){if(!text){text=line;continue}if(/[-¬]$/.test(text)&&/^\p{Ll}/u.test(line))text=text.slice(0,-1)+line;else text+=' '+line}text=text.replace(/\s+([,.;:!?])/g,'$1').replace(/\s{2,}/g,' ').trim();if(text&&!/[.!?…:;»”)]$/.test(text))text+='.';return text}
-function layoutText(data,pageWidth=0){const items=[];for(const block of data.blocks||[]){for(const paragraph of block.paragraphs||[]){const text=paragraphText(paragraph),bbox=paragraph.bbox||block.bbox;if(text&&bbox)items.push({text,bbox})}}if(!items.length){const fallback=(data.text||'').split(/\n\s*\n/).map(text=>text.replace(/\s*\n\s*/g,' ').trim()).filter(Boolean).map(text=>/[.!?…:;»”)]$/.test(text)?text:text+'.').join('\n\n');return{text:fallback,columns:1}}const width=pageWidth||Math.max(...items.map(item=>item.bbox.x1),1),middle=width/2,wide=items.filter(item=>item.bbox.x1-item.bbox.x0>width*.68),narrow=items.filter(item=>!wide.includes(item)),left=narrow.filter(item=>(item.bbox.x0+item.bbox.x1)/2<middle),right=narrow.filter(item=>(item.bbox.x0+item.bbox.x1)/2>=middle),length=group=>group.reduce((sum,item)=>sum+item.text.length,0),range=group=>[Math.min(...group.map(item=>item.bbox.y0)),Math.max(...group.map(item=>item.bbox.y1))],sortTop=(a,b)=>a.bbox.y0-b.bbox.y0||a.bbox.x0-b.bbox.x0;let columns=1,ordered=[...items].sort(sortTop);if(length(left)>70&&length(right)>70){const [l0,l1]=range(left),[r0,r1]=range(right),overlap=Math.max(0,Math.min(l1,r1)-Math.max(l0,r0)),span=Math.max(l1,r1)-Math.min(l0,r0);if(span&&overlap/span>.18){columns=2;const columnTop=Math.min(l0,r0),before=wide.filter(item=>item.bbox.y0<columnTop).sort(sortTop),after=wide.filter(item=>item.bbox.y0>=columnTop).sort(sortTop);ordered=[...before,...left.sort(sortTop),...right.sort(sortTop),...after]}}return{text:ordered.map(item=>item.text).join('\n\n'),columns}}
-function detectedItems(data){const items=[];for(const block of data.blocks||[])for(const paragraph of block.paragraphs||[]){const text=paragraphText(paragraph),bbox=paragraph.bbox||block.bbox;if(text&&bbox)items.push({text,bbox})}return items}
-function detectedLines(data){const lines=[];for(const block of data.blocks||[])for(const paragraph of block.paragraphs||[])for(const line of paragraph.lines||[]){const text=(line.text||'').trim(),bbox=line.bbox,letters=(text.match(/\p{L}/gu)||[]).length;if(text&&bbox&&letters>=4)lines.push({text,bbox})}return lines}
-function columnRegions(data,width,height){const lines=detectedLines(data),left=lines.filter(line=>line.text.length>6&&line.bbox.y0>height*.28&&line.bbox.x1<width*.6&&line.bbox.x1-line.bbox.x0>width*.07),right=lines.filter(line=>line.text.length>4&&line.bbox.y0>height*.28&&line.bbox.x0>width*.4&&line.bbox.x1-line.bbox.x0>width*.04),pairs=[];for(const l of left)for(const r of right)if(Math.abs(l.bbox.y0-r.bbox.y0)<height*.065)pairs.push({l,r,top:Math.min(l.bbox.y0,r.bbox.y0)});pairs.sort((a,b)=>a.top-b.top);const pair=pairs[0];if(!pair)return null;const bodyTop=pair.top,bodyLeft=left.filter(line=>line.bbox.y1>=bodyTop),bodyRight=right.filter(line=>line.bbox.y1>=bodyTop);if(bodyLeft.length<2||bodyRight.length<2)return null;const clamp=(value,min,max)=>Math.max(min,Math.min(max,value)),leftEdge=Math.round(width*.055),rightEdge=Math.round(width*.945),split=Math.round(width*.5),splitGap=Math.round(width*.012),bottom=Math.round(height*.96),top=clamp(bodyTop-Math.round(height*.025),Math.round(height*.28),bottom-40),headerTop=clamp(bodyTop-Math.round(height*.34),Math.round(height*.04),top),rect=(x0,y0,x1,y1)=>({left:Math.round(x0),top:Math.round(y0),width:Math.round(x1-x0),height:Math.round(y1-y0)});return{header:rect(leftEdge,headerTop,rightEdge,top),left:rect(leftEdge,top,split-splitGap,bottom),right:rect(split+splitGap,top,rightEdge,bottom)}}
-function regionText(data,header=false,finish=true){const lines=[];for(const block of data.blocks||[])for(const paragraph of block.paragraphs||[])for(const line of paragraph.lines||[]){const text=(line.text||'').trim(),confidence=Number(line.confidence??50),letters=(text.match(/\p{L}/gu)||[]).length,visible=text.replace(/\s/g,'').length,clean=header?text.replace(/^[^\p{L}\p{N}„«(]+/u,''):text;if(clean&&line.bbox&&(!header||(letters>=5&&letters/Math.max(1,visible)>.55&&confidence>=35)))lines.push({text:clean,bbox:line.bbox})}lines.sort((a,b)=>a.bbox.y0-b.bbox.y0||a.bbox.x0-b.bbox.x0);if(!lines.length)return(data.text||'').trim();const heights=lines.map(line=>line.bbox.y1-line.bbox.y0).sort((a,b)=>a-b),medianHeight=heights[Math.floor(heights.length/2)]||12,gaps=lines.slice(1).map((line,index)=>line.bbox.y0-lines[index].bbox.y1).filter(gap=>gap>=0).sort((a,b)=>a-b),medianGap=gaps[Math.floor(gaps.length/2)]||2,groups=[[lines[0]]];for(let i=1;i<lines.length;i++){const previous=lines[i-1],line=lines[i],gap=line.bbox.y0-previous.bbox.y1,previousHeight=previous.bbox.y1-previous.bbox.y0,lineHeight=line.bbox.y1-line.bbox.y0,fontChange=header&&(lineHeight>previousHeight*1.45||previousHeight>lineHeight*1.45),paragraphGap=gap>Math.max(medianGap*2.2,medianHeight*.48);if(fontChange||paragraphGap)groups.push([]);groups.at(-1).push(line)}const joinLines=(group,isLast)=>{let text='';for(const line of group.map(item=>item.text)){if(!text)text=line;else if(/[-¬]$/.test(text)&&/^\p{Ll}/u.test(line))text=text.slice(0,-1)+line;else text+=' '+line}text=text.replace(/\s+([,.;:!?])/g,'$1').replace(/\s{2,}/g,' ').trim();if(text&&(finish||!isLast)&&!/[.!?…:;»”)]$/.test(text))text+='.';return text};return groups.map((group,index)=>joinLines(group,index===groups.length-1)).filter(Boolean).join('\n\n')}
-async function recognizeDocument(worker,image,width,height,onStage=()=>{}){await worker.setParameters({tessedit_pageseg_mode:Tesseract.PSM.AUTO,preserve_interword_spaces:'1'});const initial=await worker.recognize(image,{},{text:true,blocks:true}),regions=columnRegions(initial.data,width,height);if(!regions)return layoutText(initial.data,width);onStage('Zwei Spalten gefunden. Textbereiche werden einzeln gelesen …');await worker.setParameters({tessedit_pageseg_mode:Tesseract.PSM.SINGLE_BLOCK,preserve_interword_spaces:'1'});try{const header=await worker.recognize(image,{rectangle:regions.header},{text:true,blocks:true}),left=await worker.recognize(image,{rectangle:regions.left},{text:true,blocks:true}),right=await worker.recognize(image,{rectangle:regions.right},{text:true,blocks:true}),headerText=regionText(header.data,true),leftText=regionText(left.data,false,false),rightText=regionText(right.data),continues=leftText&&!/[.!?…:;»”)]$/.test(leftText),body=continues?`${leftText} ${rightText}`:[leftText,rightText].filter(Boolean).join('\n\n');return{text:[headerText,body].filter(Boolean).join('\n\n'),columns:2}}finally{await worker.setParameters({tessedit_pageseg_mode:Tesseract.PSM.AUTO,preserve_interword_spaces:'1'})}}
-const imageBlob=image=>image instanceof HTMLCanvasElement?new Promise((resolve,reject)=>image.toBlob(blob=>blob?resolve(blob):reject(new Error('Das Foto konnte nicht vorbereitet werden.')),'image/jpeg',.92)):typeof image==='string'?fetch(image).then(result=>result.blob()):Promise.reject(new Error('Das Fotoformat wird nicht unterstützt.'));
-const recognitionEndpoint=location.hostname==='chinbe73.github.io'?'https://gregarious-bienenstitch-e1a428.netlify.app/.netlify/functions/recognize-document':'/.netlify/functions/recognize-document',deviceTokenKey='sehen-device-token';
-function deviceToken(){let token=localStorage.getItem(deviceTokenKey)||'';if(token)return token;token=(prompt('Gerätecode einmalig eingeben. Danach bleibt er auf diesem iPad gespeichert.')||'').trim();if(!token)throw new Error('Der Gerätecode fehlt. Bitte eine Betreuungsperson fragen.');localStorage.setItem(deviceTokenKey,token);return token}
-async function recognizeDocumentCloud(image,onStage=()=>{}){onStage('Dokument wird mit der neuen Seitenerkennung analysiert …');const blob=await imageBlob(image),response=await fetch(recognitionEndpoint,{method:'POST',headers:{'Content-Type':blob.type||'image/jpeg','X-Sehen-Device':deviceToken()},body:blob,cache:'no-store'});let result={};try{result=await response.json()}catch{}if(response.status===401){localStorage.removeItem(deviceTokenKey);throw new Error('Der Gerätecode stimmt nicht. Bitte nochmals versuchen.')}if(!response.ok)throw new Error(result.error||'Die Dokumenterkennung ist momentan nicht erreichbar.');return{text:(result.text||'').trim(),columns:0,paragraphs:result.paragraphs||0}}
-function stopSpeech(){speechGeneration++;speechSynthesis?.cancel()}
-function speakStructured(text){if(!('speechSynthesis'in window)||!text)return false;stopSpeech();const generation=speechGeneration,paragraphs=text.split(/\n{2,}/).map(part=>part.trim()).filter(Boolean);let index=0;const next=()=>{if(generation!==speechGeneration||index>=paragraphs.length)return;const utterance=new SpeechSynthesisUtterance(paragraphs[index++]);utterance.lang='de-CH';utterance.rate=.78;utterance.onend=()=>setTimeout(next,500);utterance.onerror=()=>setTimeout(next,250);speechSynthesis.speak(utterance)};next();return true}
-async function recognize(autoSpeak=false){let text='';try{$('recognize').disabled=true;setStatus('ocrStatus','Dokument wird analysiert …');setStatus('dailyStatus','Text und Seitenaufteilung werden erkannt …');const canvas=$('photoCanvas'),layout=await recognizeDocumentCloud(canvas,message=>setStatus('dailyStatus',message));text=layout.text;$('ocrOutput').textContent=text||'Kein Text erkannt.';$('dailyOutput').textContent=text||'Kein Text erkannt.';$('speak').disabled=!text;$('dailyAgain').disabled=!text;const message=text?'Dokumentstruktur und Absätze erkannt.':'Es wurde kein Text erkannt.';setStatus('ocrStatus',message,text?'success':'warning');setStatus('dailyStatus',text?message+' Der Text wird vorgelesen.':message,text?'success':'warning');log('Azure-Dokumenterkennung abgeschlossen; Zeichen: '+text.length+'; Absätze: '+layout.paragraphs);if(autoSpeak&&text)speak()}catch(error){setStatus('ocrStatus','Texterkennung fehlgeschlagen: '+error.message,'error');setStatus('dailyStatus','Texterkennung fehlgeschlagen: '+error.message,'error')}finally{$('recognize').disabled=false}return text}function speak(){const text=$('ocrOutput').textContent;if(!speakStructured(text)){setStatus('ocrStatus','Vorlesen wird in diesem Browser nicht unterstützt.','error');return setStatus('dailyStatus','Vorlesen wird in diesem Browser nicht unterstützt.','error')}setStatus('ocrStatus','Text wird absatzweise vorgelesen.','success');setStatus('dailyStatus','Text wird mit Pausen zwischen den Absätzen vorgelesen.','success')}
-function showScanCapture(){
-  $('scanCaptureView').classList.remove('hidden');$('scanResultView').classList.add('hidden');$('scanCaptureActions').classList.remove('hidden');$('scanResultActions').classList.add('hidden');$('scanProgress').classList.add('hidden');
-  const next=scanCaptures.length+1;$('scanGuide').dataset.label='BEREICH '+next;$('scanCapture').textContent='📷 BEREICH '+next+' AUFNEHMEN';$('scanCapture').disabled=scanCaptures.length>=8;$('scanUndo').disabled=!scanCaptures.length;$('scanFinish').disabled=!scanCaptures.length;
-}
-function sayBrief(message){if(!('speechSynthesis'in window))return;const utterance=new SpeechSynthesisUtterance(message);utterance.lang='de-CH';utterance.rate=.9;speechSynthesis.speak(utterance)}
-async function startScan(){
-  scanCaptures=[];scanIndex=0;scanRecognizing=false;document.body.classList.remove('read-open');$('daily').classList.add('hidden');$('scan').classList.remove('hidden');document.body.classList.add('scan-open');showScanCapture();setStatus('scanStatus','Bereich 1 in den roten Rahmen legen.','success');
-  const ok=stream||await restoreCamera();if(!ok)return setStatus('scanStatus','Kamera konnte nicht gestartet werden. USB-Verbindung und Berechtigung prüfen.','error');await $('scanVideo').play().catch(()=>{});setStatus('scanStatus','Bereich 1 aufnehmen. Für grosse Seiten danach mit Überlappung weiterschieben.','success');
-}
-function captureScanRegion(){
-  const video=$('scanVideo');if(!stream||!video.videoWidth)return setStatus('scanStatus','Die Kamera ist noch nicht bereit.','warning');if(scanCaptures.length>=8)return setStatus('scanStatus','Acht Bereiche sind erreicht. Bitte jetzt „Fertig“ wählen.','warning');
-  const inset=.05,sourceX=Math.round(video.videoWidth*inset),sourceY=Math.round(video.videoHeight*inset),sourceWidth=video.videoWidth-sourceX*2,sourceHeight=video.videoHeight-sourceY*2,scale=Math.min(1,2600/Math.max(sourceWidth,sourceHeight)),canvas=document.createElement('canvas');canvas.width=Math.round(sourceWidth*scale);canvas.height=Math.round(sourceHeight*scale);canvas.getContext('2d',{alpha:false}).drawImage(video,sourceX,sourceY,sourceWidth,sourceHeight,0,0,canvas.width,canvas.height);scanCaptures.push({image:canvas.toDataURL('image/jpeg',.9),width:canvas.width,height:canvas.height,text:'',columns:1});
-  const count=scanCaptures.length,next=count+1;$('scanGuide').dataset.label='BEREICH '+next+' · '+count+' GESPEICHERT';$('scanCapture').textContent=count>=8?'✓ ACHT BEREICHE – FERTIG WÄHLEN':'📷 BEREICH '+next+' AUFNEHMEN';$('scanCapture').disabled=count>=8;$('scanUndo').disabled=false;$('scanFinish').disabled=false;setStatus('scanStatus','Bereich '+count+' gespeichert. Seite drei Viertel weiterschieben; ein Viertel überlappen lassen.','success');sayBrief('Bereich '+count+' gespeichert.');log('Seitenbereich '+count+' aufgenommen: '+canvas.width+' × '+canvas.height);
-}
-function undoScanRegion(){if(!scanCaptures.length)return;scanCaptures.pop();showScanCapture();setStatus('scanStatus',scanCaptures.length?'Letzten Bereich gelöscht. Nächsten Bereich aufnehmen.':'Bereich 1 in den roten Rahmen legen.','success')}
-async function finishScan(){
-  if(!scanCaptures.length||scanRecognizing)return;scanRecognizing=true;stopCamera();$('scanCaptureActions').classList.add('hidden');$('scanProgress').classList.remove('hidden');$('scanProgress').value=0;
-  try{setStatus('scanStatus','Dokumenterkennung wird vorbereitet …');$('scanProgress').removeAttribute('value');for(let i=0;i<scanCaptures.length;i++){setStatus('scanStatus','Bereich '+(i+1)+' von '+scanCaptures.length+' wird analysiert …');const capture=scanCaptures[i],layout=await recognizeDocumentCloud(capture.image,message=>setStatus('scanStatus','Bereich '+(i+1)+': '+message));capture.text=layout.text;capture.columns=layout.columns}scanIndex=0;renderScanResult();setStatus('scanStatus',scanCaptures.length+' Bereiche mit Dokumentstruktur erkannt. Mit Zurück und Weiter durchgehen.','success');log('Grosse Seite mit Azure erkannt; Bereiche: '+scanCaptures.length)}catch(error){setStatus('scanStatus','Texterkennung fehlgeschlagen: '+error.message,'error');showScanCapture()}finally{scanRecognizing=false;$('scanProgress').classList.add('hidden');$('scanProgress').value=0}
-}
-function renderScanResult(){
-  const item=scanCaptures[scanIndex];if(!item)return;$('scanCaptureView').classList.add('hidden');$('scanCaptureActions').classList.add('hidden');$('scanResultView').classList.remove('hidden');$('scanResultActions').classList.remove('hidden');$('scanResultImage').src=item.image;$('scanResultImage').alt='Originalbild von Bereich '+(scanIndex+1);$('scanResultText').textContent=item.text||'In diesem Bereich wurde kein Text erkannt.';$('scanPosition').textContent=(scanIndex+1)+' / '+scanCaptures.length;$('scanPrevious').disabled=scanIndex===0;$('scanNext').disabled=scanIndex===scanCaptures.length-1;$('scanResultView').scrollTop=0;
-}
-function moveScan(change){scanIndex=Math.max(0,Math.min(scanCaptures.length-1,scanIndex+change));renderScanResult()}
-function speakScan(all=false){const text=(all?scanCaptures:scanCaptures.slice(scanIndex,scanIndex+1)).map(item=>item.text).filter(Boolean).join('\n\n');if(!text)return setStatus('scanStatus','In diesem Bereich wurde kein Text erkannt.','warning');speakStructured(text);setStatus('scanStatus',all?'Die ganze Seite wird absatz- und spaltenweise vorgelesen.':'Dieser Bereich wird mit Absatzpausen vorgelesen.','success')}
-function closeScan(){stopSpeech();stopCamera();scanRecognizing=false;document.body.classList.remove('scan-open');$('scan').classList.add('hidden');$('daily').classList.remove('hidden');setDailyMode('home');setStatus('dailyStatus','Was möchtest du tun?')}
-function saveResult(test,result){const data=results();data[test]={result,at:new Date().toISOString()};localStorage.setItem(resultKey,JSON.stringify(data));renderResults()}function renderResults(){const data=results();document.querySelectorAll('[data-test]').forEach(group=>group.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(data[group.dataset.test]?.result===button.dataset.result))));$('summary').replaceChildren(...Object.entries(names).map(([key,label])=>{const value=data[key]?.result||'open',card=document.createElement('div'),badge=document.createElement('span'),title=document.createElement('strong');card.className='notice';badge.className='badge '+(value==='pass'?'ok':value==='fail'?'no':'open');badge.textContent=value==='pass'?'Bestanden':value==='fail'?'Nicht bestanden':'Offen';title.textContent=label;card.append(title,document.createElement('br'),badge);return card}))}function copyResults(){const data=results(),lines=['Sehen – Machbarkeitstests',new Date().toLocaleString('de-CH'),''];Object.entries(names).forEach(([key,label])=>lines.push(label+': '+({pass:'BESTANDEN',fail:'NICHT BESTANDEN',open:'OFFEN'}[data[key]?.result]||'OFFEN')));lines.push('','Notizen:',$('notes').value,'','Diagnose:',...events);navigator.clipboard.writeText(lines.join('\n')).then(()=>setStatus('returnStatus','Ergebnisse wurden kopiert.','success')).catch(error=>setStatus('returnStatus','Kopieren fehlgeschlagen: '+error.message,'error'))}
-$('start').onclick=restoreCamera;$('refresh').onclick=findCameras;$('save').onclick=async()=>{const id=$('cameras').value,camera=devices.find(d=>d.deviceId===id);if(!camera)return setStatus('cameraStatus','Bitte eine Kamera auswählen.','warning');if(await startCamera(id)){const track=stream.getVideoTracks()[0],settings=track.getSettings();localStorage.setItem(cameraKey,JSON.stringify({id:settings.deviceId||id,label:track.label||camera.label,facingMode:settings.facingMode||''}));showSaved();log('Kameraauswahl mit Ausrichtung gespeichert.')}};$('forget').onclick=()=>{localStorage.removeItem(cameraKey);showSaved();log('Kameraauswahl zurückgesetzt.')};$('stop').onclick=()=>{stopCamera();setStatus('cameraStatus','Kamera gestoppt.')};$('photo').onclick=takePhoto;$('sharePhoto').onclick=sharePhoto;
-function audibleBook(){const raw=$('audibleId').value.trim();if(!raw)return null;let asin='',web='';if(/^https?:\/\//i.test(raw)){try{const url=new URL(raw);if(!/(^|\.)audible\.(de|com|co\.uk|com\.au|fr|it|es|ca|co\.jp|in)$/i.test(url.hostname))return null;asin=(url.pathname.match(/([A-Z0-9]{10})(?:\/)?$/i)||url.search.match(/(?:asin|productId)=([A-Z0-9]{10})/i)||[])[1]||'';web=url.href}catch{return null}}else asin=(raw.match(/^([A-Z0-9]{10})$/i)||[])[1]||'';if(!asin)return null;asin=asin.toUpperCase();return{asin,web:web||'https://www.audible.de/pd/'+encodeURIComponent(asin)}}
-$('runShortcut').onclick=()=>{const name=$('shortcutName').value.trim();if(!name)return setStatus('shortcutStatus','Bitte den Namen des Kurzbefehls eingeben.','warning');localStorage.setItem('sehen-shortcut-name',name);openExternal('shortcuts://run-shortcut?name='+encodeURIComponent(name),'Kurzbefehle')};$('openAudibleApp').onclick=()=>openExternal('https://www.audible.de/library/titles','Audible');$('openAudibleWeb').onclick=()=>{const book=audibleBook();if(!book)return setStatus('audibleStatus','Bitte den vollständigen Audible-Link einfügen. Du findest ihn beim Hörbuch unter „Teilen“ → „Link kopieren“.','warning');localStorage.setItem('sehen-audible-id',$('audibleId').value.trim());openExternal(book.web,'Audible-Hörbuch')};$('openAudiblePlayer').onclick=()=>{const book=audibleBook();if(!book)return setStatus('audibleStatus','Bitte zuerst den Audible-Link des Hörbuchs einfügen.','warning');localStorage.setItem('sehen-audible-id',$('audibleId').value.trim());openExternal('audible://openplayer?asin='+encodeURIComponent(book.asin),'Audible-Direktlink')};
-function updateMagnifierZoom(change=0){magnifierZoomIndex=Math.max(0,Math.min(magnifierZoomLevels.length-1,magnifierZoomIndex+change));const zoom=magnifierZoomLevels[magnifierZoomIndex];$('magnifierVideo').style.setProperty('--magnifier-zoom',zoom);$('magnifierZoom').textContent=zoom+'×';$('magnifierMinus').disabled=magnifierZoomIndex===0;$('magnifierPlus').disabled=magnifierZoomIndex===magnifierZoomLevels.length-1}
-function updateMagnifierFilter(change=0){magnifierFilterIndex=(magnifierFilterIndex+change+magnifierFilters.length)%magnifierFilters.length;const video=$('magnifierVideo'),[name,className]=magnifierFilters[magnifierFilterIndex];magnifierFilters.forEach(([,filterClass])=>{if(filterClass)video.classList.remove(filterClass)});if(className)video.classList.add(className);$('magnifierFilter').textContent='◐ KONTRAST: '+name;localStorage.setItem('sehen-magnifier-filter',String(magnifierFilterIndex));setStatus('magnifierStatus','Kontrast: '+name.toLowerCase()+'.','success')}
-function rememberActiveCamera(){const track=stream?.getVideoTracks()[0];if(!track)return;const settings=track.getSettings();localStorage.setItem(cameraKey,JSON.stringify({id:settings.deviceId||'',label:track.label||'Kamera',facingMode:settings.facingMode||''}));showSaved();log('Aktive Lupe-Kamera gespeichert: '+(track.label||'Kamera'))}
-async function startMagnifier(){$('daily').classList.add('hidden');$('magnifier').classList.remove('hidden');document.body.classList.add('magnifier-open');$('magnifier').requestFullscreen?.().catch(()=>{});setStatus('magnifierStatus','Gespeicherte Kamera wird gestartet …');magnifierFrozen=false;$('magnifierFreeze').textContent='❄ BILD ANHALTEN';updateMagnifierFilter(0);const ok=stream||await restoreCamera();if(!ok)return setStatus('magnifierStatus','Kamera konnte nicht gestartet werden. USB-Verbindung und Berechtigung prüfen.','error');await $('magnifierVideo').play().catch(()=>{});const track=stream.getVideoTracks()[0];setStatus('magnifierStatus','Aktive Kamera: '+(track.label||'Kamera'),'success');updateMagnifierZoom(0)}
-async function switchMagnifierCamera(){await findCameras();if(devices.length<2)return setStatus('magnifierStatus','Keine weitere Kamera gefunden. USB-Kamera anschließen und erneut versuchen.','warning');const currentId=stream?.getVideoTracks()[0]?.getSettings().deviceId,index=devices.findIndex(device=>device.deviceId===currentId),next=devices[(index+1+devices.length)%devices.length];setStatus('magnifierStatus','Wechsle zu '+(next.label||'Kamera')+' …');if(await startCamera(next.deviceId)){rememberActiveCamera();const track=stream.getVideoTracks()[0];setStatus('magnifierStatus','Aktive Kamera: '+(track.label||next.label||'Kamera'),'success')}else setStatus('magnifierStatus','Diese Kamera konnte nicht gestartet werden.','error')}
-function toggleMagnifierFreeze(){if(!stream)return;if(magnifierFrozen){$('magnifierVideo').play();magnifierFrozen=false;$('magnifierFreeze').textContent='❄ BILD ANHALTEN';setStatus('magnifierStatus','Livebild läuft weiter.','success')}else{$('magnifierVideo').pause();magnifierFrozen=true;$('magnifierFreeze').textContent='▶ LIVEBILD FORTSETZEN';setStatus('magnifierStatus','Bild angehalten.','success')}}
-function closeMagnifier(){stopCamera();magnifierFrozen=false;document.body.classList.remove('magnifier-open');if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});$('magnifier').classList.add('hidden');$('daily').classList.remove('hidden');setDailyMode('home');setStatus('dailyStatus','Was möchtest du tun?')}
-function setDailyMode(mode){const home=mode==='home',camera=mode==='camera',result=mode==='result';$('dailyHome').classList.toggle('hidden',!home);$('dailyCameraWorkspace').classList.toggle('hidden',!camera);$('dailyResultWorkspace').classList.toggle('hidden',!result);document.body.classList.toggle('read-open',!home)}
-async function startDailyCamera(){stopSpeech();setDailyMode('camera');setStatus('dailyStatus','Kamera wird gestartet …');$('dailyCapture').disabled=true;const ok=stream||await restoreCamera();$('dailyCapture').disabled=!ok;if(!ok){setStatus('dailyStatus','Kamera konnte nicht gestartet werden.','error');return}await $('dailyVideo').play().catch(()=>{});setStatus('dailyStatus','Text vollständig ins Bild legen und rechts auf „Foto lesen“ tippen.','success')}
-async function captureDailyText(){if(!takePhoto())return;setStatus('dailyStatus','Text wird erkannt und danach vorgelesen …');$('dailyCapture').disabled=true;await recognize(true);setDailyMode('result');$('dailyOutput').scrollTop=0;$('dailyCapture').disabled=false}
-function closeDailyRead(){stopSpeech();stopCamera();setDailyMode('home');setStatus('dailyStatus','Was möchtest du tun?')}
-function dailyStop(){stopSpeech();setStatus('dailyStatus','Vorlesen gestoppt.','success')}
-$('dailyRead').onclick=startDailyCamera;$('dailyCapture').onclick=captureDailyText;$('dailyCameraClose').onclick=closeDailyRead;$('dailyResultClose').onclick=closeDailyRead;$('dailyNewText').onclick=startDailyCamera;$('dailyScan').onclick=startScan;$('dailyMagnifier').onclick=startMagnifier;$('dailyAgain').onclick=speak;$('dailyBook').onclick=()=>{const book=audibleBook();if(!book)return setStatus('dailyStatus','Der Hörbuch-Link fehlt. Bitte im Diagnosemodus prüfen.','warning');localStorage.setItem('sehen-audible-id',$('audibleId').value.trim());openExternal(book.web,'Audible-Hörbuch')};$('dailyStop').onclick=dailyStop;
-$('scanCapture').onclick=captureScanRegion;$('scanUndo').onclick=undoScanRegion;$('scanFinish').onclick=finishScan;$('scanCancel').onclick=closeScan;$('scanPrevious').onclick=()=>moveScan(-1);$('scanNext').onclick=()=>moveScan(1);$('scanSpeak').onclick=()=>speakScan(false);$('scanSpeakAll').onclick=()=>speakScan(true);$('scanNew').onclick=startScan;$('scanClose').onclick=closeScan;
-$('magnifierMinus').onclick=()=>updateMagnifierZoom(-1);$('magnifierPlus').onclick=()=>updateMagnifierZoom(1);$('magnifierFreeze').onclick=toggleMagnifierFreeze;$('magnifierFilter').onclick=()=>updateMagnifierFilter(1);$('magnifierCamera').onclick=switchMagnifierCamera;$('magnifierClose').onclick=closeMagnifier;
-$('recognize').onclick=()=>recognize(false);$('speak').onclick=speak;$('stopSpeak').onclick=stopSpeech;$('textSize').oninput=event=>$('ocrOutput').style.fontSize=event.target.value+'px';document.querySelectorAll('[data-test] button').forEach(button=>button.onclick=()=>saveResult(button.parentElement.dataset.test,button.dataset.result));$('notes').value=localStorage.getItem(notesKey)||'';$('notes').oninput=event=>localStorage.setItem(notesKey,event.target.value);$('copyResults').onclick=copyResults;$('resetResults').onclick=()=>{localStorage.removeItem(resultKey);localStorage.removeItem(notesKey);$('notes').value='';renderResults();log('Testergebnisse zurückgesetzt.')};document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')handleReturn()});window.addEventListener('pageshow',handleReturn);window.addEventListener('pagehide',()=>{stopSpeech();stopCamera()});
-$('shortcutName').value=localStorage.getItem('sehen-shortcut-name')||$('shortcutName').value;$('audibleId').value=localStorage.getItem('sehen-audible-id')||defaultAudible;if(new URLSearchParams(location.search).get('diagnose')==='1'){document.body.classList.add('diagnosis-open');$('lab').classList.remove('hidden');log('Diagnosemodus aktiviert.')}showSaved();renderResults();log('Sehen geladen. Sicherer Kontext: '+isSecureContext);if(!isSecureContext){setStatus('cameraStatus','Kamera benötigt HTTPS. Bitte die veröffentlichte Seite verwenden.','warning');setStatus('dailyStatus','Kamera benötigt eine sichere HTTPS-Verbindung.','warning')}
-})();
-</script></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b2847" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Sehen" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>Sehen</title>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: #10253d;
+        background: #eef3f7;
+        font-size: 18px;
+        line-height: 1.45;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        max-width: 920px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: auto;
+        padding: max(12px, env(safe-area-inset-top))
+          max(12px, env(safe-area-inset-right))
+          max(12px, env(safe-area-inset-bottom))
+          max(12px, env(safe-area-inset-left));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      h1 {
+        font-size: clamp(2rem, 7vw, 3.2rem);
+        line-height: 1.05;
+        margin: 0.35em 0 0.25em;
+      }
+      h2 {
+        font-size: 1.45rem;
+        margin: 0.2em 0 0.5em;
+      }
+      .lead {
+        font-size: 1.12rem;
+      }
+      .muted {
+        color: #52657a;
+      }
+      .small {
+        font-size: 0.88rem;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .hero,
+      .panel {
+        border: 2px solid #c9d5e2;
+        background: #fff;
+        border-radius: 22px;
+        padding: clamp(16px, 4vw, 24px);
+        margin: 14px 0;
+        box-shadow: 0 3px 14px #17324d12;
+      }
+      .hero {
+        background: linear-gradient(145deg, #0b2847, #174f7c);
+        color: #fff;
+        border: 0;
+      }
+      .notice {
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #e8f2ff;
+        border-left: 6px solid #1660a8;
+      }
+      .warning {
+        background: #fff3d6;
+        border-left-color: #9a6500;
+      }
+      .success {
+        background: #e7f7ea;
+        border-left-color: #16833b;
+      }
+      .error {
+        background: #fde9e7;
+        border-left-color: #b42b23;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 12px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .actions > * {
+        flex: 1 1 220px;
+      }
+      button,
+      .button,
+      select,
+      input,
+      textarea {
+        font: inherit;
+        font-size: 1rem;
+        border-radius: 14px;
+        border: 2px solid #91a7bd;
+        background: #fff;
+        color: #10253d;
+        min-height: 58px;
+        padding: 12px 16px;
+      }
+      button,
+      .button {
+        font-weight: 750;
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .primary {
+        background: #0b4e8a;
+        color: #fff;
+        border-color: #0b4e8a;
+      }
+      .secondary {
+        background: #e7f1fa;
+        border-color: #7e9db9;
+      }
+      .danger {
+        color: #98251f;
+        border-color: #d79691;
+      }
+      button:focus,
+      .button:focus,
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 5px solid #f0b429;
+        outline-offset: 2px;
+      }
+      button:disabled {
+        opacity: 0.55;
+      }
+      label {
+        font-weight: 750;
+        display: block;
+        margin-top: 12px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        margin-top: 6px;
+      }
+      textarea {
+        min-height: 110px;
+      }
+      .step {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .number {
+        flex: 0 0 2.3rem;
+        height: 2.3rem;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #0b4e8a;
+        color: white;
+        font-weight: 850;
+      }
+      .result-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .result-buttons button {
+        min-height: 50px;
+        padding: 8px;
+        font-size: 0.9rem;
+      }
+      .result-buttons button[aria-pressed="true"] {
+        outline: 4px solid #f0b429;
+        background: #102f4e;
+        color: #fff;
+      }
+      video,
+      #still {
+        display: block;
+        width: 100%;
+        max-height: 52vh;
+        object-fit: contain;
+        background: #172638;
+        border-radius: 14px;
+      }
+      #still {
+        display: none;
+        margin-top: 12px;
+      }
+      .ocr-output {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        line-height: 1.3;
+        white-space: pre-wrap;
+        background: #fffbe6;
+        border: 3px solid #9c7800;
+        border-radius: 16px;
+        padding: 18px;
+        min-height: 100px;
+      }
+      .status {
+        font-weight: 800;
+        background: #e8f2ff;
+        border-radius: 12px;
+        padding: 13px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #e7edf3;
+        color: #24394e;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+      .badge.ok {
+        background: #dff3e4;
+        color: #146b30;
+      }
+      .badge.no {
+        background: #f8dfdc;
+        color: #97251e;
+      }
+      .badge.open {
+        background: #fff0c7;
+        color: #785000;
+      }
+      details {
+        border-top: 1px solid #d7e0e9;
+        margin-top: 18px;
+        padding-top: 12px;
+      }
+      summary {
+        font-weight: 800;
+        cursor: pointer;
+        padding: 8px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #edf2f6;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 0.78rem;
+        max-height: 260px;
+        overflow: auto;
+      }
+      #returnBanner {
+        position: sticky;
+        top: 8px;
+        z-index: 10;
+        box-shadow: 0 8px 24px #152b4050;
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        overflow: auto;
+        padding: 3px 0 8px;
+      }
+      nav a {
+        white-space: nowrap;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: #fff;
+        color: #0b4e8a;
+        font-weight: 800;
+        text-decoration: none;
+        border: 2px solid #b7c7d7;
+      }
+      #daily {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+      #daily .panel {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+        gap: 12px;
+        overflow: hidden;
+      }
+      .daily-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .daily-actions button {
+        min-height: 96px;
+        font-size: clamp(1.2rem, 4vw, 1.75rem);
+        border-width: 3px;
+      }
+      .daily-actions .read {
+        grid-column: 1/-1;
+        min-height: 120px;
+        background: #075b3b;
+        border-color: #075b3b;
+        color: #fff;
+      }
+      .daily-actions .magnify {
+        background: #4a287f;
+        border-color: #4a287f;
+        color: #fff;
+      }
+      .daily-actions .book {
+        background: #784200;
+        border-color: #784200;
+        color: #fff;
+      }
+      .daily-output {
+        min-height: 0;
+        font-size: clamp(1.7rem, 6vw, 3rem);
+        line-height: 1.25;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .daily-video {
+        max-height: 25vh;
+        margin: 0;
+      }
+      body.diagnosis-open {
+        display: block;
+        overflow: auto;
+      }
+      body.diagnosis-open #daily {
+        min-height: calc(100vh - 24px);
+      }
+      .magnifier-stage {
+        height: min(62vh, 620px);
+        overflow: hidden;
+        background: #000;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+      }
+      .magnifier-stage video {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: contain;
+        border-radius: 0;
+        transform: scale(var(--magnifier-zoom, 1));
+        transition: transform 0.15s;
+      }
+      .magnifier-stage video.filter-bw {
+        filter: grayscale(1) contrast(1.75);
+      }
+      .magnifier-stage video.filter-invert {
+        filter: grayscale(1) invert(1) contrast(1.65);
+      }
+      .magnifier-stage video.filter-yellow {
+        filter: grayscale(1) sepia(1) saturate(7) contrast(1.65);
+      }
+      .magnifier-controls {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1fr;
+        gap: 12px;
+        margin: 14px 0;
+      }
+      .magnifier-controls button,
+      .magnifier-controls output {
+        min-height: 84px;
+        font-size: clamp(1.5rem, 6vw, 2.4rem);
+        font-weight: 850;
+        border: 3px solid #91a7bd;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: #fff;
+      }
+      .magnifier-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .magnifier-actions button {
+        min-height: 78px;
+        font-size: 1.15rem;
+      }
+      body.magnifier-open {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+      }
+      body.magnifier-open > #returnBanner {
+        display: none;
+      }
+      body.magnifier-open #magnifier {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: #000;
+        padding: max(8px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      body.magnifier-open #magnifier .panel {
+        height: 100%;
+        margin: 0;
+        padding: 8px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+        gap: 8px;
+      }
+      body.magnifier-open #magnifier h2 {
+        margin: 0;
+      }
+      body.magnifier-open #magnifierStatus {
+        margin: 0;
+        padding: 8px 12px;
+      }
+      body.magnifier-open .magnifier-stage {
+        height: auto;
+        min-height: 0;
+        border-radius: 8px;
+      }
+      body.magnifier-open .magnifier-controls {
+        margin: 0;
+        gap: 8px;
+      }
+      body.magnifier-open .magnifier-controls button,
+      body.magnifier-open .magnifier-controls output {
+        min-height: 68px;
+      }
+      body.magnifier-open .magnifier-actions {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      body.magnifier-open .magnifier-actions button {
+        min-height: 64px;
+        padding: 8px;
+      }
+      @media (max-width: 560px) {
+        .result-buttons,
+        .daily-actions,
+        .magnifier-actions {
+          grid-template-columns: 1fr;
+        }
+        .daily-actions .read {
+          grid-column: auto;
+        }
+        .panel {
+          padding: 16px;
+        }
+        .actions > * {
+          flex-basis: 100%;
+        }
+        .magnifier-stage {
+          height: 54vh;
+        }
+        body.magnifier-open .magnifier-actions {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        body.magnifier-open .magnifier-actions button {
+          font-size: 0.85rem;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        html {
+          scroll-behavior: smooth;
+        }
+      }
+      .scan-stage {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #111;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+      }
+      .scan-stage video {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: contain;
+        border-radius: 0;
+      }
+      .scan-guide {
+        position: absolute;
+        inset: 6%;
+        border: 7px solid #ef2b2d;
+        border-radius: 8px;
+        pointer-events: none;
+        box-shadow: 0 0 0 9999px #00000024;
+      }
+      .scan-guide::before {
+        content: attr(data-label);
+        position: absolute;
+        top: -3px;
+        left: 50%;
+        transform: translate(-50%, -100%);
+        padding: 6px 16px;
+        background: #ef2b2d;
+        color: #fff;
+        font-weight: 900;
+        font-size: 1.1rem;
+        border-radius: 10px 10px 0 0;
+        white-space: nowrap;
+      }
+      .scan-actions,
+      .scan-nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .scan-actions button,
+      .scan-nav button {
+        min-height: 76px;
+        font-size: 1.05rem;
+      }
+      .scan-actions .capture {
+        grid-column: 1/-1;
+        min-height: 96px;
+        background: #075b3b;
+        border-color: #075b3b;
+        color: #fff;
+        font-size: 1.35rem;
+      }
+      .scan-nav {
+        grid-template-columns: 1fr auto 1fr;
+      }
+      .scan-nav output {
+        min-width: 100px;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        font-weight: 900;
+      }
+      .scan-result {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        background: #fffbe6;
+        border: 3px solid #9c7800;
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .scan-result img {
+        display: block;
+        width: 100%;
+        max-height: 32vh;
+        object-fit: contain;
+        background: #172638;
+        border-radius: 10px;
+        margin-bottom: 14px;
+      }
+      .scan-result-text {
+        font-size: clamp(1.6rem, 5vw, 2.8rem);
+        line-height: 1.3;
+        white-space: pre-wrap;
+      }
+      .scan-progress {
+        height: 14px;
+        width: 100%;
+        accent-color: #075b3b;
+      }
+      body.scan-open {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #eef3f7;
+      }
+      body.scan-open > #returnBanner {
+        display: none;
+      }
+      body.scan-open #scan {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        padding: max(8px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      body.scan-open #scan .panel {
+        height: 100%;
+        margin: 0;
+        padding: 8px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+      body.scan-open #scanStatus {
+        margin: 0;
+        padding: 9px 12px;
+      }
+      body.scan-open .scan-actions {
+        margin: 0;
+      }
+      .daily-actions .scan {
+        background: #9b1c31;
+        border-color: #9b1c31;
+        color: #fff;
+      }
+      @media (max-width: 560px) {
+        .scan-actions button {
+          min-height: 64px;
+          font-size: 0.92rem;
+        }
+        .scan-actions .capture {
+          min-height: 78px;
+        }
+        .scan-guide {
+          inset: 4%;
+          border-width: 5px;
+        }
+        .scan-result img {
+          max-height: 25vh;
+        }
+      }
+      .workflow {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 30%);
+        gap: 12px;
+      }
+      .workflow-main {
+        min-width: 0;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .workflow-actions {
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+      }
+      .workflow-actions button {
+        width: 100%;
+        min-height: 76px;
+        border-width: 3px;
+        font-size: clamp(1rem, 2.2vw, 1.28rem);
+      }
+      .workflow-actions .main-action {
+        min-height: 108px;
+        background: #075b3b;
+        border-color: #075b3b;
+        color: #fff;
+        font-size: clamp(1.25rem, 3vw, 1.65rem);
+      }
+      .test-action {
+        background: #ffd400 !important;
+        border-color: #6b5100 !important;
+        color: #172638 !important;
+        font-weight: 900 !important;
+      }
+      .camera-stage {
+        height: 100%;
+        min-height: 260px;
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        background: #111;
+        border-radius: 14px;
+      }
+      .camera-stage video {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: contain;
+        border-radius: 0;
+      }
+      .camera-instruction {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        width: min(88%, 560px);
+        min-height: 64px;
+        border: 4px solid #fff;
+        background: #075b3bee;
+        color: #fff;
+        font-size: clamp(1rem, 2.4vw, 1.35rem);
+        font-weight: 900;
+        box-shadow: 0 4px 18px #0009;
+      }
+      .camera-instruction:focus {
+        outline-color: #ffd400;
+      }
+      .daily-workflow {
+        min-height: 0;
+      }
+      .daily-result {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+      }
+      .daily-home-output {
+        display: none;
+      }
+      body.read-open {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      body.read-open > #returnBanner {
+        display: none;
+      }
+      body.read-open #daily {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        padding: max(8px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      body.read-open #daily .panel {
+        height: 100%;
+        padding: 8px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+      body.read-open #dailyStatus {
+        margin: 0;
+      }
+      .scan-workflow {
+        min-height: 0;
+      }
+      .scan-stage {
+        height: 100%;
+        min-height: 260px;
+        cursor: pointer;
+      }
+      .scan-tap-label {
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(88%, 560px);
+        padding: 12px 16px;
+        border: 4px solid #fff;
+        border-radius: 14px;
+        background: #075b3bee;
+        color: #fff;
+        font-size: clamp(1rem, 2.2vw, 1.3rem);
+        font-weight: 900;
+        text-align: center;
+        pointer-events: none;
+        box-shadow: 0 4px 18px #0009;
+      }
+      .scan-side-actions {
+        grid-template-columns: 1fr;
+      }
+      .scan-side-actions .capture {
+        grid-column: auto;
+      }
+      .scan-result {
+        height: 100%;
+      }
+      .scan-result img {
+        max-height: 38vh;
+      }
+      .scan-result-actions {
+        min-height: 0;
+      }
+      .scan-result-actions .scan-nav {
+        grid-template-columns: 1fr auto 1fr;
+      }
+      .scan-result-actions .scan-actions {
+        grid-template-columns: 1fr;
+      }
+      .scan-result-actions .scan-actions button {
+        min-height: 68px;
+      }
+      body.scan-open #scan .panel {
+        grid-template-rows: auto auto minmax(0, 1fr);
+      }
+      netlify-drawer,
+      #netlify-drawer,
+      [data-netlify-drawer] {
+        display: none !important;
+      }
+      @media (orientation: portrait), (max-width: 700px) {
+        .workflow {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+        .workflow-actions {
+          order: -1;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          overflow: visible;
+        }
+        .workflow-actions button,
+        .workflow-actions .main-action {
+          min-height: 64px;
+          font-size: 1rem;
+        }
+        .camera-stage,
+        .scan-stage {
+          min-height: 180px;
+        }
+        .scan-result-actions .scan-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .scan-result img {
+          max-height: 24vh;
+        }
+      }
+      .scan-workflow {
+        height: 100%;
+        align-items: stretch;
+      }
+      .scan-workflow > .scan-stage {
+        height: auto;
+      }
+      body.scan-open #scanStatus {
+        grid-row: 1;
+      }
+      body.scan-open #scanProgress {
+        grid-row: 2;
+      }
+      body.scan-open #scanWorkspace {
+        grid-row: 3;
+      }
+      html,
+      body {
+        touch-action: manipulation;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      body.magnifier-open,
+      body.magnifier-open button,
+      body.magnifier-open output {
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="returnBanner"
+      class="notice success hidden"
+      role="status"
+      aria-live="assertive"
+    >
+      <strong>Zurück bei Sehen.</strong> <span id="returnDetails"></span>
+    </div>
+    <main id="daily">
+      <section class="panel">
+        <p id="dailyStatus" class="status" role="status" aria-live="assertive">
+          Was möchtest du tun?
+        </p>
+        <div id="dailyHome" class="daily-actions">
+          <button id="dailyRead" class="read">📖 SCHNELL LESEN</button
+          ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
+          ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
+          ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
+        </div>
+        <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
+          <div class="workflow-main camera-stage">
+            <video
+              id="dailyVideo"
+              playsinline
+              autoplay
+              muted
+              aria-label="Livebild zum Lesen"
+            ></video>
+          </div>
+          <div class="workflow-actions">
+            <button id="dailyCapture" class="main-action">📷 FOTO LESEN</button
+            ><button id="dailyTestImage" class="test-action">
+              🧪 FESTES TESTBILD LESEN</button
+            ><button id="dailyCameraClose" class="danger">← SCHLIESSEN</button>
+          </div>
+        </div>
+        <div id="dailyResultWorkspace" class="workflow daily-workflow hidden">
+          <div
+            id="dailyOutput"
+            class="ocr-output daily-output daily-result"
+            tabindex="0"
+            aria-label="Gelesener Text"
+          >
+            Der erkannte Text erscheint hier.
+          </div>
+          <div class="workflow-actions">
+            <button id="dailyAgain" class="primary" disabled>
+              🔊 NOCHMALS VORLESEN</button
+            ><button id="dailyNewText">📷 NEUEN TEXT LESEN</button
+            ><button id="dailyStop" class="danger">■ VORLESEN STOPPEN</button
+            ><button id="dailyResultClose" class="danger">← SCHLIESSEN</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <main id="scan" class="hidden">
+      <section class="panel">
+        <p id="scanStatus" class="status" role="status" aria-live="assertive">
+          Grosse Seite wird vorbereitet …
+        </p>
+        <progress
+          id="scanProgress"
+          class="scan-progress hidden"
+          max="100"
+          value="0"
+          aria-label="Fortschritt der Texterkennung"
+        ></progress>
+        <div id="scanWorkspace" class="workflow scan-workflow">
+          <div id="scanCaptureView" class="workflow-main scan-stage">
+            <video
+              id="scanVideo"
+              playsinline
+              autoplay
+              muted
+              aria-label="Livebild der grossen Seite"
+            ></video>
+            <div id="scanGuide" class="scan-guide" data-label="BEREICH 1"></div>
+          </div>
+          <div
+            id="scanResultView"
+            class="workflow-main scan-result hidden"
+            tabindex="0"
+          >
+            <img id="scanResultImage" alt="Aufgenommener Seitenbereich" />
+            <div id="scanResultText" class="scan-result-text">
+              Der erkannte Text erscheint hier.
+            </div>
+          </div>
+          <div
+            id="scanCaptureActions"
+            class="workflow-actions scan-actions scan-side-actions"
+          >
+            <button id="scanCapture" class="capture main-action">
+              📷 BEREICH AUFNEHMEN</button
+            ><button id="scanTestImage" class="test-action">
+              🧪 FESTES TESTBILD VERWENDEN</button
+            ><button id="scanUndo" disabled>↶ LETZTES LÖSCHEN</button
+            ><button id="scanFinish" disabled>✓ FERTIG – ERKENNEN</button
+            ><button id="scanCancel" class="danger">← SCHLIESSEN</button>
+          </div>
+          <div
+            id="scanResultActions"
+            class="workflow-actions scan-result-actions hidden"
+          >
+            <div class="scan-nav">
+              <button id="scanPrevious">←</button
+              ><output id="scanPosition" aria-live="polite">1 / 1</output
+              ><button id="scanNext">→</button>
+            </div>
+            <div class="scan-actions">
+              <button id="scanSpeak" class="primary">🔊 BEREICH LESEN</button
+              ><button id="scanSpeakAll">🔊 ALLES LESEN</button
+              ><button id="scanNew">▤ NEUE SEITE</button
+              ><button id="scanClose" class="danger">← SCHLIESSEN</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <main id="magnifier" class="hidden">
+      <section class="panel">
+        <h2>Lupe</h2>
+        <p
+          id="magnifierStatus"
+          class="status"
+          role="status"
+          aria-live="assertive"
+        >
+          Lupe wird vorbereitet …
+        </p>
+        <div class="magnifier-stage">
+          <video
+            id="magnifierVideo"
+            playsinline
+            autoplay
+            muted
+            aria-label="Vergrößertes Livebild"
+          ></video>
+        </div>
+        <div class="magnifier-controls" aria-label="Vergrößerung">
+          <button id="magnifierMinus" aria-label="Weniger vergrößern">−</button
+          ><output id="magnifierZoom" aria-live="polite">1×</output
+          ><button id="magnifierPlus" aria-label="Stärker vergrößern">+</button>
+        </div>
+        <div class="magnifier-actions">
+          <button id="magnifierFreeze" class="primary">❄ BILD ANHALTEN</button
+          ><button id="magnifierFilter">◐ KONTRAST: FARBE</button
+          ><button id="magnifierCamera">↻ KAMERA WECHSELN</button
+          ><button id="magnifierClose" class="danger">← LUPE SCHLIESSEN</button>
+        </div>
+      </section>
+    </main>
+    <div id="lab" class="hidden">
+      <nav aria-label="Machbarkeitstests">
+        <a href="#camera">Kamera</a><a href="#seeingai">Seeing AI</a
+        ><a href="#shortcuts">Kurzbefehle</a><a href="#audible">Audible</a
+        ><a href="#ocr">Text lesen</a><a href="#results">Ergebnisse</a>
+      </nav>
+      <section class="panel" id="camera">
+        <div class="step">
+          <span class="number">1</span>
+          <div>
+            <h2>Kamera und gespeicherte Auswahl</h2>
+            <p>
+              Prüft, ob dieselbe Kamera nach einem Neustart wieder verwendet
+              wird.
+            </p>
+          </div>
+        </div>
+        <p id="cameraStatus" class="status" role="status" aria-live="polite">
+          Noch nicht gestartet.
+        </p>
+        <label for="cameras">Gefundene Kameras</label
+        ><select id="cameras">
+          <option>Noch nicht gesucht</option>
+        </select>
+        <div class="actions">
+          <button class="primary" id="start">Gespeicherte Kamera starten</button
+          ><button id="refresh">Kameras suchen</button
+          ><button id="save">Auswahl aktivieren und merken</button>
+        </div>
+        <p id="saved" class="muted">Keine Kamera gespeichert.</p>
+        <video
+          id="video"
+          playsinline
+          autoplay
+          muted
+          aria-label="Livebild der Kamera"
+        ></video>
+        <div class="actions">
+          <button class="primary" id="photo">Testfoto aufnehmen</button
+          ><button id="loadFixedTest" class="test-action">
+            🧪 Festes Testbild laden</button
+          ><button id="stop">Kamera stoppen</button
+          ><button class="danger" id="forget">Kamerawahl zurücksetzen</button>
+        </div>
+        <canvas id="photoCanvas" class="hidden"></canvas
+        ><img id="still" alt="Aufgenommenes Testfoto" />
+        <p id="resolution"></p>
+        <div class="result-buttons" data-test="camera">
+          <button data-result="pass">✓ Bestanden</button
+          ><button data-result="fail">✕ Nicht bestanden</button
+          ><button data-result="open">? Offen</button>
+        </div>
+      </section>
+      <section class="panel" id="seeingai">
+        <div class="step">
+          <span class="number">2</span>
+          <div>
+            <h2>Foto an Seeing AI übergeben</h2>
+            <p>
+              Prüft, ob ein aufgenommenes Foto ohne schwierige Bedienung
+              weitergegeben werden kann.
+            </p>
+          </div>
+        </div>
+        <div class="notice warning">
+          <strong>Entscheidender Punkt:</strong> Für Seeing AI ist keine
+          öffentliche direkte Foto-Schnittstelle dokumentiert. Dieser Test
+          verwendet deshalb die iPad-Teilen-Funktion. Er ist nur bestanden, wenn
+          die Bedienung zuverlässig einfach genug ist.
+        </div>
+        <div class="actions">
+          <button class="primary" id="sharePhoto" disabled>Foto teilen</button
+          ><a class="button secondary" href="https://aka.ms/SeeingAIiOSDownload"
+            >Seeing AI öffnen/installieren</a
+          >
+        </div>
+        <p id="shareStatus" class="status">
+          Zuerst oben ein Testfoto aufnehmen.
+        </p>
+        <div class="result-buttons" data-test="seeingai">
+          <button data-result="pass">✓ Ohne Hilfe möglich</button
+          ><button data-result="fail">✕ Zu kompliziert</button
+          ><button data-result="open">? Noch testen</button>
+        </div>
+      </section>
+      <section class="panel" id="shortcuts">
+        <div class="step">
+          <span class="number">3</span>
+          <div>
+            <h2>Kurzbefehl direkt starten</h2>
+            <p>
+              Startet einen vorhandenen Apple-Kurzbefehl über sein offizielles
+              URL-Schema.
+            </p>
+          </div>
+        </div>
+        <label for="shortcutName">Genauer Name des Kurzbefehls</label
+        ><input id="shortcutName" value="Sehen – Test" autocomplete="off" />
+        <div class="actions">
+          <button class="primary" id="runShortcut">Kurzbefehl starten</button>
+        </div>
+        <p id="shortcutStatus" class="status">
+          Der Kurzbefehl muss auf diesem iPad bereits vorhanden sein.
+        </p>
+        <div class="result-buttons" data-test="shortcuts">
+          <button data-result="pass">✓ Gestartet</button
+          ><button data-result="fail">✕ Nicht gestartet</button
+          ><button data-result="open">? Offen</button>
+        </div>
+      </section>
+      <section class="panel" id="audible">
+        <div class="step">
+          <span class="number">4</span>
+          <div>
+            <h2>Audible öffnen und abspielen</h2>
+            <p>
+              Testet zuerst, ob ein bestimmtes Hörbuch geöffnet wird, und
+              separat, ob es sofort losspielt.
+            </p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="openAudibleApp">Audible öffnen</button>
+        </div>
+        <label for="audibleId">Audible-Link zum Hörbuch</label
+        ><input
+          id="audibleId"
+          placeholder="Vollständigen Audible-Link hier einfügen"
+          autocomplete="off"
+          autocapitalize="off"
+        />
+        <p class="small muted">
+          So findest du ihn: Hörbuch in Audible öffnen → Teilen → Link kopieren
+          → hier einfügen. Alternativ funktioniert auch die zehnstellige ASIN
+          aus dem Link, zum Beispiel B0XXXXXXXX.
+        </p>
+        <div class="actions">
+          <button id="openAudibleWeb">Dieses Hörbuch öffnen</button
+          ><button id="openAudiblePlayer">Direktwiedergabe testen</button>
+        </div>
+        <p id="audibleStatus" class="status">
+          Beginne mit „Audible öffnen“. Für ein bestimmtes Buch füge danach
+          einfach dessen Link ein.
+        </p>
+        <p class="small muted">
+          Der normale Hörbuch-Link öffnet das Buch, startet aber nicht
+          automatisch. Der Direktlink ist nicht öffentlich von Audible
+          dokumentiert und kann auf dem iPad wirkungslos bleiben.
+        </p>
+        <h3>Ergebnis: Hörbuch öffnen</h3>
+        <div class="result-buttons" data-test="audible">
+          <button data-result="pass">✓ Hörbuch geöffnet</button
+          ><button data-result="fail">✕ Nicht geöffnet</button
+          ><button data-result="open">? Offen</button>
+        </div>
+        <h3>Ergebnis: Sofort abspielen</h3>
+        <div class="result-buttons" data-test="audibleplay">
+          <button data-result="pass">✓ Spielt sofort</button
+          ><button data-result="fail">✕ Startet nicht</button
+          ><button data-result="open">? Offen</button>
+        </div>
+      </section>
+      <section class="panel" id="return">
+        <div class="step">
+          <span class="number">5</span>
+          <div>
+            <h2>Rückkehr zu Sehen</h2>
+            <p>
+              Jeder App-Start wird gemessen. Beim Zurückkehren erscheint oben
+              eine grosse Bestätigung.
+            </p>
+          </div>
+        </div>
+        <p id="returnStatus" class="status">Noch kein App-Wechsel gemessen.</p>
+        <p class="notice">
+          Auf dem iPad zurückkehren: oben links auf
+          <strong>„Safari“</strong> beziehungsweise
+          <strong>„Sehen“</strong> tippen oder im App-Umschalter Sehen
+          auswählen. Für den Alltag ist „Zum Home-Bildschirm“ als eigenständige
+          Web-App am einfachsten.
+        </p>
+        <div class="result-buttons" data-test="return">
+          <button data-result="pass">✓ Rückkehr zuverlässig</button
+          ><button data-result="fail">✕ Rückkehr schwierig</button
+          ><button data-result="open">? Offen</button>
+        </div>
+      </section>
+      <section class="panel" id="ocr">
+        <div class="step">
+          <span class="number">6</span>
+          <div>
+            <h2>Text erkennen, gross zeigen und vorlesen</h2>
+            <p>
+              Die Verarbeitung läuft lokal im Browser. Das Foto wird nicht
+              hochgeladen.
+            </p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="recognize" disabled>
+            Text im Foto erkennen</button
+          ><button id="speak" disabled>Text vorlesen</button
+          ><button id="stopSpeak">Vorlesen stoppen</button>
+        </div>
+        <p id="ocrStatus" class="status" role="status" aria-live="polite">
+          Zuerst oben ein Testfoto aufnehmen.
+        </p>
+        <div
+          id="ocrOutput"
+          class="ocr-output"
+          tabindex="0"
+          aria-label="Erkannter Text"
+        >
+          Erkannter Text erscheint hier.
+        </div>
+        <label for="textSize">Textgrösse</label
+        ><input id="textSize" type="range" min="24" max="64" value="40" />
+        <div class="result-buttons" data-test="ocr">
+          <button data-result="pass">✓ Gut lesbar</button
+          ><button data-result="fail">✕ Nicht zuverlässig</button
+          ><button data-result="open">? Offen</button>
+        </div>
+      </section>
+      <section class="panel" id="results">
+        <h2>Testergebnisse</h2>
+        <div id="summary" class="grid"></div>
+        <label for="notes">Notizen vom iPad-Test</label
+        ><textarea
+          id="notes"
+          placeholder="Was hat funktioniert? Wo gab es einen Dialog oder Hilfe nötig?"
+        ></textarea>
+        <div class="actions">
+          <button id="copyResults" class="primary">Ergebnisse kopieren</button
+          ><button id="resetResults" class="danger">
+            Ergebnisse zurücksetzen
+          </button>
+        </div>
+        <details>
+          <summary>Technische Diagnose</summary>
+          <pre id="log"></pre>
+        </details>
+      </section>
+    </div>
+    <script>
+      (() => {
+        "use strict";
+        const $ = (id) => document.getElementById(id),
+          cameraKey = "sehen-camera-v2",
+          resultKey = "sehen-spikes-v1",
+          notesKey = "sehen-spike-notes-v1",
+          testImageUrl =
+            "https://chinbe73.github.io/sehen-app/testseite.jpg",
+          defaultAudible =
+            "https://www.audible.de/pd/B0067JVXDG?source_code=ASSORAP0511160006&share_location=library_overflow",
+          magnifierZoomLevels = [1, 1.5, 2, 3, 4, 6, 8],
+          magnifierFilters = [
+            ["FARBE", ""],
+            ["SCHWARZ-WEISS", "filter-bw"],
+            ["INVERTIERT", "filter-invert"],
+            ["GELB-SCHWARZ", "filter-yellow"],
+          ];
+        const names = {
+          camera: "Kamera bleibt gespeichert",
+          seeingai: "Seeing AI Fotoübergabe",
+          shortcuts: "Kurzbefehl direkt starten",
+          audible: "Audible-Hörbuch öffnen",
+          audibleplay: "Audible sofort abspielen",
+          return: "Rückkehr zu Sehen",
+          ocr: "OCR, Grossschrift und Vorlesen",
+        };
+        let stream = null,
+          devices = [],
+          events = [],
+          ocrWorker = null,
+          cameraBusy = false,
+          magnifierZoomIndex = 0,
+          magnifierFrozen = false,
+          magnifierFilterIndex = Math.max(
+            0,
+            Math.min(
+              3,
+              Number(localStorage.getItem("sehen-magnifier-filter")) || 0,
+            ),
+          ),
+          scanCaptures = [],
+          scanIndex = 0,
+          scanRecognizing = false,
+          speechGeneration = 0;
+        const readJSON = (key, fallback) => {
+            try {
+              return (
+                JSON.parse(localStorage.getItem(key) || "null") ?? fallback
+              );
+            } catch {
+              return fallback;
+            }
+          },
+          savedCamera = () => readJSON(cameraKey, null),
+          results = () => readJSON(resultKey, {});
+        const log = (message) => {
+          events.push(
+            "[" + new Date().toLocaleTimeString("de-CH") + "] " + message,
+          );
+          $("log").textContent = events.slice(-60).join("\n");
+        };
+        const setStatus = (id, message, kind = "") => {
+          const node = $(id);
+          node.textContent = message;
+          node.className = "status" + (kind ? " " + kind : "");
+          log(message);
+        };
+        const showSaved = () => {
+          $("saved").textContent = savedCamera()?.label
+            ? "Gespeicherte Wahl: " + savedCamera().label
+            : "Keine Kamera gespeichert.";
+        };
+        const stopCamera = () => {
+          stream?.getTracks().forEach((track) => track.stop());
+          stream = null;
+          ["video", "dailyVideo", "magnifierVideo", "scanVideo"].forEach(
+            (id) => ($(id).srcObject = null),
+          );
+        };
+        async function findCameras() {
+          try {
+            devices = (await navigator.mediaDevices.enumerateDevices()).filter(
+              (device) => device.kind === "videoinput",
+            );
+            $("cameras").replaceChildren();
+            devices.forEach((device, index) => {
+              const option = document.createElement("option");
+              option.value = device.deviceId;
+              option.textContent = device.label || "Kamera " + (index + 1);
+              $("cameras").append(option);
+            });
+            log(
+              "Gefundene Kameras: " +
+                (devices.map((d) => d.label || "unbenannt").join("; ") ||
+                  "keine"),
+            );
+            return devices;
+          } catch (error) {
+            setStatus(
+              "cameraStatus",
+              "Kamerasuche fehlgeschlagen: " + error.message,
+              "error",
+            );
+            return [];
+          }
+        }
+        async function startCamera(
+          deviceId,
+          facingMode = "environment",
+          quiet = false,
+        ) {
+          if (cameraBusy) {
+            log("Ein Kamerastart läuft bereits.");
+            return false;
+          }
+          cameraBusy = true;
+          ["start", "refresh", "save"].forEach((id) => ($(id).disabled = true));
+          stopCamera();
+          if (!navigator.mediaDevices?.getUserMedia) {
+            setStatus(
+              "cameraStatus",
+              "Dieser Browser unterstützt keinen Kamerazugriff.",
+              "error",
+            );
+            cameraBusy = false;
+            ["start", "refresh", "save"].forEach(
+              (id) => ($(id).disabled = false),
+            );
+            return false;
+          }
+          try {
+            setStatus("cameraStatus", "Kamerazugriff wird angefordert …");
+            const video = deviceId
+              ? {
+                  deviceId: { exact: deviceId },
+                  width: { ideal: 3840 },
+                  height: { ideal: 2160 },
+                }
+              : {
+                  facingMode: { ideal: facingMode },
+                  width: { ideal: 3840 },
+                  height: { ideal: 2160 },
+                };
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video,
+            });
+            $("video").srcObject = stream;
+            $("dailyVideo").srcObject = stream;
+            $("magnifierVideo").srcObject = stream;
+            $("scanVideo").srcObject = stream;
+            await Promise.allSettled([
+              $("video").play(),
+              $("dailyVideo").play(),
+              $("magnifierVideo").play(),
+              $("scanVideo").play(),
+            ]);
+            $("dailyVideo").classList.remove("hidden");
+            const track = stream.getVideoTracks()[0],
+              settings = track.getSettings();
+            setStatus(
+              "cameraStatus",
+              "Kamera läuft: " + (track.label || "Kamera"),
+              "success",
+            );
+            $("resolution").textContent =
+              "Auflösung: " + settings.width + " × " + settings.height;
+            await findCameras();
+            if (settings.deviceId) $("cameras").value = settings.deviceId;
+            return true;
+          } catch (error) {
+            if (quiet)
+              log("Gespeicherte Geräte-ID nicht verwendbar: " + error.name);
+            else
+              setStatus(
+                "cameraStatus",
+                "Kamera nicht verfügbar: " + error.name + " – " + error.message,
+                "error",
+              );
+            return false;
+          } finally {
+            cameraBusy = false;
+            ["start", "refresh", "save"].forEach(
+              (id) => ($(id).disabled = false),
+            );
+          }
+        }
+        async function restoreCamera() {
+          const pref = savedCamera();
+          if (!pref) return startCamera();
+          log(
+            "Gespeicherte Kamera wird wiederhergestellt: " +
+              (pref.label || "unbenannt"),
+          );
+          if (
+            pref.id &&
+            (await startCamera(pref.id, pref.facingMode || "environment", true))
+          )
+            return true;
+          if (!(await startCamera(null, pref.facingMode || "environment")))
+            return false;
+          const currentId = stream?.getVideoTracks()[0]?.getSettings().deviceId,
+            matching = devices.find((d) => d.label && d.label === pref.label);
+          if (matching?.deviceId && matching.deviceId !== currentId) {
+            log("Kamera nach Freigabe über den gespeicherten Namen gefunden.");
+            return startCamera(
+              matching.deviceId,
+              pref.facingMode || "environment",
+            );
+          }
+          if (!matching)
+            log(
+              "Gespeicherter Name nicht gefunden; passende Vorder-/Rückkamera bleibt aktiv.",
+            );
+          return true;
+        }
+        function takePhoto() {
+          const video = $("dailyVideo").videoWidth
+            ? $("dailyVideo")
+            : $("video");
+          if (!stream || !video.videoWidth) {
+            setStatus(
+              "cameraStatus",
+              "Bitte zuerst die Kamera starten.",
+              "warning",
+            );
+            return false;
+          }
+          const canvas = $("photoCanvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext("2d", { alpha: false }).drawImage(video, 0, 0);
+          $("still").src = canvas.toDataURL("image/jpeg", 0.92);
+          $("still").style.display = "block";
+          $("sharePhoto").disabled = false;
+          $("recognize").disabled = false;
+          setStatus(
+            "cameraStatus",
+            "Testfoto wurde nur auf diesem Gerät aufgenommen.",
+            "success",
+          );
+          setStatus("shareStatus", "Foto ist bereit zum Teilen.");
+          setStatus("ocrStatus", "Foto ist bereit für die Texterkennung.");
+          log(
+            "Testfoto lokal aufgenommen: " +
+              canvas.width +
+              " × " +
+              canvas.height,
+          );
+          return true;
+        }
+        async function loadFixedTestImage() {
+          try {
+            const response = await fetch(testImageUrl, { cache: "no-store" });
+            if (!response.ok)
+              throw new Error("Das feste Testbild konnte nicht geladen werden.");
+            const blob = await response.blob(),
+              bitmap = await createImageBitmap(blob),
+              canvas = $("photoCanvas");
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            canvas
+              .getContext("2d", { alpha: false })
+              .drawImage(bitmap, 0, 0);
+            bitmap.close?.();
+            $("still").src = canvas.toDataURL("image/jpeg", 0.9);
+            $("still").style.display = "block";
+            $("sharePhoto").disabled = false;
+            $("recognize").disabled = false;
+            $("resolution").textContent =
+              "Festes Testbild: " + canvas.width + " × " + canvas.height;
+            setStatus("cameraStatus", "Festes Testbild geladen.", "success");
+            setStatus(
+              "ocrStatus",
+              "Festes Testbild ist bereit für die Texterkennung.",
+              "success",
+            );
+            log(
+              "Festes Testbild geladen: " +
+                canvas.width +
+                " × " +
+                canvas.height,
+            );
+            return true;
+          } catch (error) {
+            setStatus("cameraStatus", error.message, "error");
+            setStatus("dailyStatus", error.message, "error");
+            setStatus("scanStatus", error.message, "error");
+            return false;
+          }
+        }
+        const canvasBlob = () =>
+          new Promise((resolve, reject) =>
+            $("photoCanvas").toBlob(
+              (blob) =>
+                blob
+                  ? resolve(blob)
+                  : reject(new Error("Foto konnte nicht erzeugt werden.")),
+              "image/jpeg",
+              0.92,
+            ),
+          );
+        async function sharePhoto() {
+          try {
+            const blob = await canvasBlob(),
+              file = new File([blob], "sehen-testfoto.jpg", {
+                type: "image/jpeg",
+              });
+            if (!navigator.share || !navigator.canShare?.({ files: [file] }))
+              throw new Error(
+                "Das Teilen von Fotos wird hier nicht unterstützt.",
+              );
+            await navigator.share({
+              files: [file],
+              title: "Testfoto für Seeing AI",
+            });
+            setStatus(
+              "shareStatus",
+              "Teilen abgeschlossen. Wurde Seeing AI ohne Hilfe erreicht?",
+              "success",
+            );
+          } catch (error) {
+            setStatus(
+              "shareStatus",
+              error.name === "AbortError"
+                ? "Teilen wurde abgebrochen."
+                : error.message,
+              error.name === "AbortError" ? "warning" : "error",
+            );
+          }
+        }
+        function openExternal(url, target) {
+          sessionStorage.setItem(
+            "sehen-departure",
+            JSON.stringify({ at: Date.now(), target }),
+          );
+          log("App-Wechsel gestartet: " + target);
+          location.href = url;
+        }
+        function handleReturn() {
+          let stored = null;
+          try {
+            stored = JSON.parse(
+              sessionStorage.getItem("sehen-departure") || "null",
+            );
+          } catch {}
+          if (!stored?.at || Date.now() - stored.at > 36e5) return;
+          const seconds = Math.max(
+            1,
+            Math.round((Date.now() - stored.at) / 1000),
+          );
+          $("returnDetails").textContent =
+            "Rückkehr von " +
+            stored.target +
+            " nach " +
+            seconds +
+            " Sekunden erkannt.";
+          $("returnBanner").classList.remove("hidden");
+          setStatus(
+            "returnStatus",
+            "Rückkehr von " +
+              stored.target +
+              " nach " +
+              seconds +
+              " Sekunden erkannt.",
+            "success",
+          );
+          setDailyMode("home");
+          setStatus("dailyStatus", "Zurück bei Sehen.", "success");
+          sessionStorage.removeItem("sehen-departure");
+          setTimeout(() => $("returnBanner").classList.add("hidden"), 10000);
+        }
+        async function loadOCR() {
+          if (window.Tesseract) return;
+          if (!navigator.onLine)
+            throw new Error(
+              "Für das erstmalige Laden der Texterkennung wird Internet benötigt.",
+            );
+          if (scanRecognizing)
+            setStatus("scanStatus", "Texterkennung wird einmalig geladen …");
+          else {
+            setStatus("ocrStatus", "Texterkennung wird einmalig geladen …");
+            setStatus("dailyStatus", "Texterkennung wird einmalig geladen …");
+          }
+          await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src =
+              "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+            script.onload = resolve;
+            script.onerror = () =>
+              reject(new Error("Texterkennung konnte nicht geladen werden."));
+            document.head.append(script);
+          });
+        }
+        function ocrProgress(message) {
+          if (message.status !== "recognizing text") return;
+          const percent = Math.round((message.progress || 0) * 100);
+          if (scanRecognizing) {
+            $("scanProgress").value = percent;
+            $("scanStatus").textContent =
+              "Text wird erkannt: " + percent + " %";
+          } else {
+            setStatus("ocrStatus", "Text wird erkannt: " + percent + " %");
+            setStatus("dailyStatus", "Text wird erkannt: " + percent + " %");
+          }
+        }
+        async function getOCRWorker() {
+          await loadOCR();
+          if (!ocrWorker) {
+            ocrWorker = await Tesseract.createWorker("deu", 1, {
+              logger: ocrProgress,
+            });
+            await ocrWorker.setParameters({
+              tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+              preserve_interword_spaces: "1",
+            });
+          }
+          return ocrWorker;
+        }
+        function paragraphText(paragraph) {
+          const lines = (paragraph.lines || [])
+            .map((line) => (line.text || "").trim())
+            .filter(Boolean);
+          if (!lines.length && paragraph.text)
+            lines.push(paragraph.text.trim());
+          let text = "";
+          for (const line of lines) {
+            if (!text) {
+              text = line;
+              continue;
+            }
+            if (/[-¬]$/.test(text) && /^\p{Ll}/u.test(line))
+              text = text.slice(0, -1) + line;
+            else text += " " + line;
+          }
+          text = text
+            .replace(/\s+([,.;:!?])/g, "$1")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+          if (text && !/[.!?…:;»”)]$/.test(text)) text += ".";
+          return text;
+        }
+        function layoutText(data, pageWidth = 0) {
+          const items = [];
+          for (const block of data.blocks || []) {
+            for (const paragraph of block.paragraphs || []) {
+              const text = paragraphText(paragraph),
+                bbox = paragraph.bbox || block.bbox;
+              if (text && bbox) items.push({ text, bbox });
+            }
+          }
+          if (!items.length) {
+            const fallback = (data.text || "")
+              .split(/\n\s*\n/)
+              .map((text) => text.replace(/\s*\n\s*/g, " ").trim())
+              .filter(Boolean)
+              .map((text) => (/[.!?…:;»”)]$/.test(text) ? text : text + "."))
+              .join("\n\n");
+            return { text: fallback, columns: 1 };
+          }
+          const width =
+              pageWidth || Math.max(...items.map((item) => item.bbox.x1), 1),
+            middle = width / 2,
+            wide = items.filter(
+              (item) => item.bbox.x1 - item.bbox.x0 > width * 0.68,
+            ),
+            narrow = items.filter((item) => !wide.includes(item)),
+            left = narrow.filter(
+              (item) => (item.bbox.x0 + item.bbox.x1) / 2 < middle,
+            ),
+            right = narrow.filter(
+              (item) => (item.bbox.x0 + item.bbox.x1) / 2 >= middle,
+            ),
+            length = (group) =>
+              group.reduce((sum, item) => sum + item.text.length, 0),
+            range = (group) => [
+              Math.min(...group.map((item) => item.bbox.y0)),
+              Math.max(...group.map((item) => item.bbox.y1)),
+            ],
+            sortTop = (a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0;
+          let columns = 1,
+            ordered = [...items].sort(sortTop);
+          if (length(left) > 70 && length(right) > 70) {
+            const [l0, l1] = range(left),
+              [r0, r1] = range(right),
+              overlap = Math.max(0, Math.min(l1, r1) - Math.max(l0, r0)),
+              span = Math.max(l1, r1) - Math.min(l0, r0);
+            if (span && overlap / span > 0.18) {
+              columns = 2;
+              const columnTop = Math.min(l0, r0),
+                before = wide
+                  .filter((item) => item.bbox.y0 < columnTop)
+                  .sort(sortTop),
+                after = wide
+                  .filter((item) => item.bbox.y0 >= columnTop)
+                  .sort(sortTop);
+              ordered = [
+                ...before,
+                ...left.sort(sortTop),
+                ...right.sort(sortTop),
+                ...after,
+              ];
+            }
+          }
+          return {
+            text: ordered.map((item) => item.text).join("\n\n"),
+            columns,
+          };
+        }
+        function detectedItems(data) {
+          const items = [];
+          for (const block of data.blocks || [])
+            for (const paragraph of block.paragraphs || []) {
+              const text = paragraphText(paragraph),
+                bbox = paragraph.bbox || block.bbox;
+              if (text && bbox) items.push({ text, bbox });
+            }
+          return items;
+        }
+        function detectedLines(data) {
+          const lines = [];
+          for (const block of data.blocks || [])
+            for (const paragraph of block.paragraphs || [])
+              for (const line of paragraph.lines || []) {
+                const text = (line.text || "").trim(),
+                  bbox = line.bbox,
+                  letters = (text.match(/\p{L}/gu) || []).length;
+                if (text && bbox && letters >= 4) lines.push({ text, bbox });
+              }
+          return lines;
+        }
+        function columnRegions(data, width, height) {
+          const lines = detectedLines(data),
+            left = lines.filter(
+              (line) =>
+                line.text.length > 6 &&
+                line.bbox.y0 > height * 0.28 &&
+                line.bbox.x1 < width * 0.6 &&
+                line.bbox.x1 - line.bbox.x0 > width * 0.07,
+            ),
+            right = lines.filter(
+              (line) =>
+                line.text.length > 4 &&
+                line.bbox.y0 > height * 0.28 &&
+                line.bbox.x0 > width * 0.4 &&
+                line.bbox.x1 - line.bbox.x0 > width * 0.04,
+            ),
+            pairs = [];
+          for (const l of left)
+            for (const r of right)
+              if (Math.abs(l.bbox.y0 - r.bbox.y0) < height * 0.065)
+                pairs.push({ l, r, top: Math.min(l.bbox.y0, r.bbox.y0) });
+          pairs.sort((a, b) => a.top - b.top);
+          const pair = pairs[0];
+          if (!pair) return null;
+          const bodyTop = pair.top,
+            bodyLeft = left.filter((line) => line.bbox.y1 >= bodyTop),
+            bodyRight = right.filter((line) => line.bbox.y1 >= bodyTop);
+          if (bodyLeft.length < 2 || bodyRight.length < 2) return null;
+          const clamp = (value, min, max) =>
+              Math.max(min, Math.min(max, value)),
+            leftEdge = Math.round(width * 0.055),
+            rightEdge = Math.round(width * 0.945),
+            split = Math.round(width * 0.5),
+            splitGap = Math.round(width * 0.012),
+            bottom = Math.round(height * 0.96),
+            top = clamp(
+              bodyTop - Math.round(height * 0.025),
+              Math.round(height * 0.28),
+              bottom - 40,
+            ),
+            headerTop = clamp(
+              bodyTop - Math.round(height * 0.34),
+              Math.round(height * 0.04),
+              top,
+            ),
+            rect = (x0, y0, x1, y1) => ({
+              left: Math.round(x0),
+              top: Math.round(y0),
+              width: Math.round(x1 - x0),
+              height: Math.round(y1 - y0),
+            });
+          return {
+            header: rect(leftEdge, headerTop, rightEdge, top),
+            left: rect(leftEdge, top, split - splitGap, bottom),
+            right: rect(split + splitGap, top, rightEdge, bottom),
+          };
+        }
+        function regionText(data, header = false, finish = true) {
+          const lines = [];
+          for (const block of data.blocks || [])
+            for (const paragraph of block.paragraphs || [])
+              for (const line of paragraph.lines || []) {
+                const text = (line.text || "").trim(),
+                  confidence = Number(line.confidence ?? 50),
+                  letters = (text.match(/\p{L}/gu) || []).length,
+                  visible = text.replace(/\s/g, "").length,
+                  clean = header
+                    ? text.replace(/^[^\p{L}\p{N}„«(]+/u, "")
+                    : text;
+                if (
+                  clean &&
+                  line.bbox &&
+                  (!header ||
+                    (letters >= 5 &&
+                      letters / Math.max(1, visible) > 0.55 &&
+                      confidence >= 35))
+                )
+                  lines.push({ text: clean, bbox: line.bbox });
+              }
+          lines.sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0);
+          if (!lines.length) return (data.text || "").trim();
+          const heights = lines
+              .map((line) => line.bbox.y1 - line.bbox.y0)
+              .sort((a, b) => a - b),
+            medianHeight = heights[Math.floor(heights.length / 2)] || 12,
+            gaps = lines
+              .slice(1)
+              .map((line, index) => line.bbox.y0 - lines[index].bbox.y1)
+              .filter((gap) => gap >= 0)
+              .sort((a, b) => a - b),
+            medianGap = gaps[Math.floor(gaps.length / 2)] || 2,
+            groups = [[lines[0]]];
+          for (let i = 1; i < lines.length; i++) {
+            const previous = lines[i - 1],
+              line = lines[i],
+              gap = line.bbox.y0 - previous.bbox.y1,
+              previousHeight = previous.bbox.y1 - previous.bbox.y0,
+              lineHeight = line.bbox.y1 - line.bbox.y0,
+              fontChange =
+                header &&
+                (lineHeight > previousHeight * 1.45 ||
+                  previousHeight > lineHeight * 1.45),
+              paragraphGap =
+                gap > Math.max(medianGap * 2.2, medianHeight * 0.48);
+            if (fontChange || paragraphGap) groups.push([]);
+            groups.at(-1).push(line);
+          }
+          const joinLines = (group, isLast) => {
+            let text = "";
+            for (const line of group.map((item) => item.text)) {
+              if (!text) text = line;
+              else if (/[-¬]$/.test(text) && /^\p{Ll}/u.test(line))
+                text = text.slice(0, -1) + line;
+              else text += " " + line;
+            }
+            text = text
+              .replace(/\s+([,.;:!?])/g, "$1")
+              .replace(/\s{2,}/g, " ")
+              .trim();
+            if (text && (finish || !isLast) && !/[.!?…:;»”)]$/.test(text))
+              text += ".";
+            return text;
+          };
+          return groups
+            .map((group, index) =>
+              joinLines(group, index === groups.length - 1),
+            )
+            .filter(Boolean)
+            .join("\n\n");
+        }
+        async function recognizeDocument(
+          worker,
+          image,
+          width,
+          height,
+          onStage = () => {},
+        ) {
+          await worker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+            preserve_interword_spaces: "1",
+          });
+          const initial = await worker.recognize(
+              image,
+              {},
+              { text: true, blocks: true },
+            ),
+            regions = columnRegions(initial.data, width, height);
+          if (!regions) return layoutText(initial.data, width);
+          onStage(
+            "Zwei Spalten gefunden. Textbereiche werden einzeln gelesen …",
+          );
+          await worker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+            preserve_interword_spaces: "1",
+          });
+          try {
+            const header = await worker.recognize(
+                image,
+                { rectangle: regions.header },
+                { text: true, blocks: true },
+              ),
+              left = await worker.recognize(
+                image,
+                { rectangle: regions.left },
+                { text: true, blocks: true },
+              ),
+              right = await worker.recognize(
+                image,
+                { rectangle: regions.right },
+                { text: true, blocks: true },
+              ),
+              headerText = regionText(header.data, true),
+              leftText = regionText(left.data, false, false),
+              rightText = regionText(right.data),
+              continues = leftText && !/[.!?…:;»”)]$/.test(leftText),
+              body = continues
+                ? `${leftText} ${rightText}`
+                : [leftText, rightText].filter(Boolean).join("\n\n");
+            return {
+              text: [headerText, body].filter(Boolean).join("\n\n"),
+              columns: 2,
+            };
+          } finally {
+            await worker.setParameters({
+              tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+              preserve_interword_spaces: "1",
+            });
+          }
+        }
+        const imageBlob = (image) =>
+          image instanceof HTMLCanvasElement
+            ? new Promise((resolve, reject) =>
+                image.toBlob(
+                  (blob) =>
+                    blob
+                      ? resolve(blob)
+                      : reject(
+                          new Error(
+                            "Das Foto konnte nicht vorbereitet werden.",
+                          ),
+                        ),
+                  "image/jpeg",
+                  0.92,
+                ),
+              )
+            : typeof image === "string"
+              ? fetch(image).then((result) => result.blob())
+              : Promise.reject(
+                  new Error("Das Fotoformat wird nicht unterstützt."),
+                );
+        const recognitionEndpoint =
+            location.hostname === "chinbe73.github.io"
+              ? "https://gregarious-bienenstitch-e1a428.netlify.app/.netlify/functions/recognize-document"
+              : "/.netlify/functions/recognize-document",
+          deviceTokenKey = "sehen-device-token";
+        function deviceToken() {
+          let token = localStorage.getItem(deviceTokenKey) || "";
+          if (token) return token;
+          token = (
+            prompt(
+              "Gerätecode einmalig eingeben. Danach bleibt er auf diesem iPad gespeichert.",
+            ) || ""
+          ).trim();
+          if (!token)
+            throw new Error(
+              "Der Gerätecode fehlt. Bitte eine Betreuungsperson fragen.",
+            );
+          localStorage.setItem(deviceTokenKey, token);
+          return token;
+        }
+        async function recognizeDocumentCloud(image, onStage = () => {}) {
+          onStage("Dokument wird mit der neuen Seitenerkennung analysiert …");
+          const blob = await imageBlob(image),
+            response = await fetch(recognitionEndpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": blob.type || "image/jpeg",
+                "X-Sehen-Device": deviceToken(),
+              },
+              body: blob,
+              cache: "no-store",
+            });
+          let result = {};
+          try {
+            result = await response.json();
+          } catch {}
+          if (response.status === 401) {
+            localStorage.removeItem(deviceTokenKey);
+            throw new Error(
+              "Der Gerätecode stimmt nicht. Bitte nochmals versuchen.",
+            );
+          }
+          if (!response.ok)
+            throw new Error(
+              result.error ||
+                "Die Dokumenterkennung ist momentan nicht erreichbar.",
+            );
+          return {
+            text: (result.text || "").trim(),
+            columns: 0,
+            paragraphs: result.paragraphs || 0,
+          };
+        }
+        function stopSpeech() {
+          speechGeneration++;
+          speechSynthesis?.cancel();
+        }
+        function speakStructured(text) {
+          if (!("speechSynthesis" in window) || !text) return false;
+          stopSpeech();
+          const generation = speechGeneration,
+            paragraphs = text
+              .split(/\n{2,}/)
+              .map((part) => part.trim())
+              .filter(Boolean);
+          let index = 0;
+          const next = () => {
+            if (generation !== speechGeneration || index >= paragraphs.length)
+              return;
+            const utterance = new SpeechSynthesisUtterance(paragraphs[index++]);
+            utterance.lang = "de-CH";
+            utterance.rate = 0.78;
+            utterance.onend = () => setTimeout(next, 500);
+            utterance.onerror = () => setTimeout(next, 250);
+            speechSynthesis.speak(utterance);
+          };
+          next();
+          return true;
+        }
+        async function recognize(autoSpeak = false) {
+          let text = "";
+          try {
+            $("recognize").disabled = true;
+            setStatus("ocrStatus", "Dokument wird analysiert …");
+            setStatus(
+              "dailyStatus",
+              "Text und Seitenaufteilung werden erkannt …",
+            );
+            const canvas = $("photoCanvas"),
+              layout = await recognizeDocumentCloud(canvas, (message) =>
+                setStatus("dailyStatus", message),
+              );
+            text = layout.text;
+            $("ocrOutput").textContent = text || "Kein Text erkannt.";
+            $("dailyOutput").textContent = text || "Kein Text erkannt.";
+            $("speak").disabled = !text;
+            $("dailyAgain").disabled = !text;
+            const message = text
+              ? "Dokumentstruktur und Absätze erkannt."
+              : "Es wurde kein Text erkannt.";
+            setStatus("ocrStatus", message, text ? "success" : "warning");
+            setStatus(
+              "dailyStatus",
+              text ? message + " Der Text wird vorgelesen." : message,
+              text ? "success" : "warning",
+            );
+            log(
+              "Azure-Dokumenterkennung abgeschlossen; Zeichen: " +
+                text.length +
+                "; Absätze: " +
+                layout.paragraphs,
+            );
+            if (autoSpeak && text) speak();
+          } catch (error) {
+            setStatus(
+              "ocrStatus",
+              "Texterkennung fehlgeschlagen: " + error.message,
+              "error",
+            );
+            setStatus(
+              "dailyStatus",
+              "Texterkennung fehlgeschlagen: " + error.message,
+              "error",
+            );
+          } finally {
+            $("recognize").disabled = false;
+          }
+          return text;
+        }
+        function speak() {
+          const text = $("ocrOutput").textContent;
+          if (!speakStructured(text)) {
+            setStatus(
+              "ocrStatus",
+              "Vorlesen wird in diesem Browser nicht unterstützt.",
+              "error",
+            );
+            return setStatus(
+              "dailyStatus",
+              "Vorlesen wird in diesem Browser nicht unterstützt.",
+              "error",
+            );
+          }
+          setStatus(
+            "ocrStatus",
+            "Text wird absatzweise vorgelesen.",
+            "success",
+          );
+          setStatus(
+            "dailyStatus",
+            "Text wird mit Pausen zwischen den Absätzen vorgelesen.",
+            "success",
+          );
+        }
+        function showScanCapture() {
+          $("scanCaptureView").classList.remove("hidden");
+          $("scanResultView").classList.add("hidden");
+          $("scanCaptureActions").classList.remove("hidden");
+          $("scanResultActions").classList.add("hidden");
+          $("scanProgress").classList.add("hidden");
+          const next = scanCaptures.length + 1;
+          $("scanGuide").dataset.label = "BEREICH " + next;
+          $("scanCapture").textContent = "📷 BEREICH " + next + " AUFNEHMEN";
+          $("scanCapture").disabled = scanCaptures.length >= 8;
+          $("scanUndo").disabled = !scanCaptures.length;
+          $("scanFinish").disabled = !scanCaptures.length;
+        }
+        function sayBrief(message) {
+          if (!("speechSynthesis" in window)) return;
+          const utterance = new SpeechSynthesisUtterance(message);
+          utterance.lang = "de-CH";
+          utterance.rate = 0.9;
+          speechSynthesis.speak(utterance);
+        }
+        async function startScan() {
+          scanCaptures = [];
+          scanIndex = 0;
+          scanRecognizing = false;
+          document.body.classList.remove("read-open");
+          $("daily").classList.add("hidden");
+          $("scan").classList.remove("hidden");
+          document.body.classList.add("scan-open");
+          showScanCapture();
+          setStatus(
+            "scanStatus",
+            "Bereich 1 in den roten Rahmen legen.",
+            "success",
+          );
+          const ok = stream || (await restoreCamera());
+          if (!ok)
+            return setStatus(
+              "scanStatus",
+              "Kamera konnte nicht gestartet werden. USB-Verbindung und Berechtigung prüfen.",
+              "error",
+            );
+          await $("scanVideo")
+            .play()
+            .catch(() => {});
+          setStatus(
+            "scanStatus",
+            "Bereich 1 aufnehmen. Für grosse Seiten danach mit Überlappung weiterschieben.",
+            "success",
+          );
+        }
+        function captureScanRegion() {
+          const video = $("scanVideo");
+          if (!stream || !video.videoWidth)
+            return setStatus(
+              "scanStatus",
+              "Die Kamera ist noch nicht bereit.",
+              "warning",
+            );
+          if (scanCaptures.length >= 8)
+            return setStatus(
+              "scanStatus",
+              "Acht Bereiche sind erreicht. Bitte jetzt „Fertig“ wählen.",
+              "warning",
+            );
+          const inset = 0.05,
+            sourceX = Math.round(video.videoWidth * inset),
+            sourceY = Math.round(video.videoHeight * inset),
+            sourceWidth = video.videoWidth - sourceX * 2,
+            sourceHeight = video.videoHeight - sourceY * 2,
+            scale = Math.min(1, 2600 / Math.max(sourceWidth, sourceHeight)),
+            canvas = document.createElement("canvas");
+          canvas.width = Math.round(sourceWidth * scale);
+          canvas.height = Math.round(sourceHeight * scale);
+          canvas
+            .getContext("2d", { alpha: false })
+            .drawImage(
+              video,
+              sourceX,
+              sourceY,
+              sourceWidth,
+              sourceHeight,
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+          scanCaptures.push({
+            image: canvas.toDataURL("image/jpeg", 0.9),
+            width: canvas.width,
+            height: canvas.height,
+            text: "",
+            columns: 1,
+          });
+          const count = scanCaptures.length,
+            next = count + 1;
+          $("scanGuide").dataset.label =
+            "BEREICH " + next + " · " + count + " GESPEICHERT";
+          $("scanCapture").textContent =
+            count >= 8
+              ? "✓ ACHT BEREICHE – FERTIG WÄHLEN"
+              : "📷 BEREICH " + next + " AUFNEHMEN";
+          $("scanCapture").disabled = count >= 8;
+          $("scanUndo").disabled = false;
+          $("scanFinish").disabled = false;
+          setStatus(
+            "scanStatus",
+            "Bereich " +
+              count +
+              " gespeichert. Seite drei Viertel weiterschieben; ein Viertel überlappen lassen.",
+            "success",
+          );
+          sayBrief("Bereich " + count + " gespeichert.");
+          log(
+            "Seitenbereich " +
+              count +
+              " aufgenommen: " +
+              canvas.width +
+              " × " +
+              canvas.height,
+          );
+        }
+        function undoScanRegion() {
+          if (!scanCaptures.length) return;
+          scanCaptures.pop();
+          showScanCapture();
+          setStatus(
+            "scanStatus",
+            scanCaptures.length
+              ? "Letzten Bereich gelöscht. Nächsten Bereich aufnehmen."
+              : "Bereich 1 in den roten Rahmen legen.",
+            "success",
+          );
+        }
+        async function finishScan() {
+          if (!scanCaptures.length || scanRecognizing) return;
+          scanRecognizing = true;
+          stopCamera();
+          $("scanCaptureActions").classList.add("hidden");
+          $("scanProgress").classList.remove("hidden");
+          $("scanProgress").value = 0;
+          try {
+            setStatus("scanStatus", "Dokumenterkennung wird vorbereitet …");
+            $("scanProgress").removeAttribute("value");
+            for (let i = 0; i < scanCaptures.length; i++) {
+              setStatus(
+                "scanStatus",
+                "Bereich " +
+                  (i + 1) +
+                  " von " +
+                  scanCaptures.length +
+                  " wird analysiert …",
+              );
+              const capture = scanCaptures[i],
+                layout = await recognizeDocumentCloud(
+                  capture.image,
+                  (message) =>
+                    setStatus(
+                      "scanStatus",
+                      "Bereich " + (i + 1) + ": " + message,
+                    ),
+                );
+              capture.text = layout.text;
+              capture.columns = layout.columns;
+            }
+            scanIndex = 0;
+            renderScanResult();
+            setStatus(
+              "scanStatus",
+              scanCaptures.length +
+                " Bereiche mit Dokumentstruktur erkannt. Mit Zurück und Weiter durchgehen.",
+              "success",
+            );
+            log(
+              "Grosse Seite mit Azure erkannt; Bereiche: " +
+                scanCaptures.length,
+            );
+          } catch (error) {
+            setStatus(
+              "scanStatus",
+              "Texterkennung fehlgeschlagen: " + error.message,
+              "error",
+            );
+            showScanCapture();
+          } finally {
+            scanRecognizing = false;
+            $("scanProgress").classList.add("hidden");
+            $("scanProgress").value = 0;
+          }
+        }
+        async function useFixedTestForScan() {
+          if (scanRecognizing) return;
+          stopCamera();
+          setStatus("scanStatus", "Festes Testbild wird geladen …");
+          if (!(await loadFixedTestImage())) return;
+          const canvas = $("photoCanvas");
+          scanCaptures = [
+            {
+              image: canvas.toDataURL("image/jpeg", 0.9),
+              width: canvas.width,
+              height: canvas.height,
+              text: "",
+              columns: 1,
+            },
+          ];
+          scanIndex = 0;
+          setStatus(
+            "scanStatus",
+            "Festes Testbild geladen. Es wird jetzt erkannt …",
+            "success",
+          );
+          await finishScan();
+        }
+        function renderScanResult() {
+          const item = scanCaptures[scanIndex];
+          if (!item) return;
+          $("scanCaptureView").classList.add("hidden");
+          $("scanCaptureActions").classList.add("hidden");
+          $("scanResultView").classList.remove("hidden");
+          $("scanResultActions").classList.remove("hidden");
+          $("scanResultImage").src = item.image;
+          $("scanResultImage").alt =
+            "Originalbild von Bereich " + (scanIndex + 1);
+          $("scanResultText").textContent =
+            item.text || "In diesem Bereich wurde kein Text erkannt.";
+          $("scanPosition").textContent =
+            scanIndex + 1 + " / " + scanCaptures.length;
+          $("scanPrevious").disabled = scanIndex === 0;
+          $("scanNext").disabled = scanIndex === scanCaptures.length - 1;
+          $("scanResultView").scrollTop = 0;
+        }
+        function moveScan(change) {
+          scanIndex = Math.max(
+            0,
+            Math.min(scanCaptures.length - 1, scanIndex + change),
+          );
+          renderScanResult();
+        }
+        function speakScan(all = false) {
+          const text = (
+            all ? scanCaptures : scanCaptures.slice(scanIndex, scanIndex + 1)
+          )
+            .map((item) => item.text)
+            .filter(Boolean)
+            .join("\n\n");
+          if (!text)
+            return setStatus(
+              "scanStatus",
+              "In diesem Bereich wurde kein Text erkannt.",
+              "warning",
+            );
+          speakStructured(text);
+          setStatus(
+            "scanStatus",
+            all
+              ? "Die ganze Seite wird absatz- und spaltenweise vorgelesen."
+              : "Dieser Bereich wird mit Absatzpausen vorgelesen.",
+            "success",
+          );
+        }
+        function closeScan() {
+          stopSpeech();
+          stopCamera();
+          scanRecognizing = false;
+          document.body.classList.remove("scan-open");
+          $("scan").classList.add("hidden");
+          $("daily").classList.remove("hidden");
+          setDailyMode("home");
+          setStatus("dailyStatus", "Was möchtest du tun?");
+        }
+        function saveResult(test, result) {
+          const data = results();
+          data[test] = { result, at: new Date().toISOString() };
+          localStorage.setItem(resultKey, JSON.stringify(data));
+          renderResults();
+        }
+        function renderResults() {
+          const data = results();
+          document
+            .querySelectorAll("[data-test]")
+            .forEach((group) =>
+              group
+                .querySelectorAll("button")
+                .forEach((button) =>
+                  button.setAttribute(
+                    "aria-pressed",
+                    String(
+                      data[group.dataset.test]?.result ===
+                        button.dataset.result,
+                    ),
+                  ),
+                ),
+            );
+          $("summary").replaceChildren(
+            ...Object.entries(names).map(([key, label]) => {
+              const value = data[key]?.result || "open",
+                card = document.createElement("div"),
+                badge = document.createElement("span"),
+                title = document.createElement("strong");
+              card.className = "notice";
+              badge.className =
+                "badge " +
+                (value === "pass" ? "ok" : value === "fail" ? "no" : "open");
+              badge.textContent =
+                value === "pass"
+                  ? "Bestanden"
+                  : value === "fail"
+                    ? "Nicht bestanden"
+                    : "Offen";
+              title.textContent = label;
+              card.append(title, document.createElement("br"), badge);
+              return card;
+            }),
+          );
+        }
+        function copyResults() {
+          const data = results(),
+            lines = [
+              "Sehen – Machbarkeitstests",
+              new Date().toLocaleString("de-CH"),
+              "",
+            ];
+          Object.entries(names).forEach(([key, label]) =>
+            lines.push(
+              label +
+                ": " +
+                ({ pass: "BESTANDEN", fail: "NICHT BESTANDEN", open: "OFFEN" }[
+                  data[key]?.result
+                ] || "OFFEN"),
+            ),
+          );
+          lines.push(
+            "",
+            "Notizen:",
+            $("notes").value,
+            "",
+            "Diagnose:",
+            ...events,
+          );
+          navigator.clipboard
+            .writeText(lines.join("\n"))
+            .then(() =>
+              setStatus(
+                "returnStatus",
+                "Ergebnisse wurden kopiert.",
+                "success",
+              ),
+            )
+            .catch((error) =>
+              setStatus(
+                "returnStatus",
+                "Kopieren fehlgeschlagen: " + error.message,
+                "error",
+              ),
+            );
+        }
+        $("start").onclick = restoreCamera;
+        $("refresh").onclick = findCameras;
+        $("save").onclick = async () => {
+          const id = $("cameras").value,
+            camera = devices.find((d) => d.deviceId === id);
+          if (!camera)
+            return setStatus(
+              "cameraStatus",
+              "Bitte eine Kamera auswählen.",
+              "warning",
+            );
+          if (await startCamera(id)) {
+            const track = stream.getVideoTracks()[0],
+              settings = track.getSettings();
+            localStorage.setItem(
+              cameraKey,
+              JSON.stringify({
+                id: settings.deviceId || id,
+                label: track.label || camera.label,
+                facingMode: settings.facingMode || "",
+              }),
+            );
+            showSaved();
+            log("Kameraauswahl mit Ausrichtung gespeichert.");
+          }
+        };
+        $("forget").onclick = () => {
+          localStorage.removeItem(cameraKey);
+          showSaved();
+          log("Kameraauswahl zurückgesetzt.");
+        };
+        $("stop").onclick = () => {
+          stopCamera();
+          setStatus("cameraStatus", "Kamera gestoppt.");
+        };
+        $("photo").onclick = takePhoto;
+        $("loadFixedTest").onclick = loadFixedTestImage;
+        $("sharePhoto").onclick = sharePhoto;
+        function audibleBook() {
+          const raw = $("audibleId").value.trim();
+          if (!raw) return null;
+          let asin = "",
+            web = "";
+          if (/^https?:\/\//i.test(raw)) {
+            try {
+              const url = new URL(raw);
+              if (
+                !/(^|\.)audible\.(de|com|co\.uk|com\.au|fr|it|es|ca|co\.jp|in)$/i.test(
+                  url.hostname,
+                )
+              )
+                return null;
+              asin =
+                (url.pathname.match(/([A-Z0-9]{10})(?:\/)?$/i) ||
+                  url.search.match(/(?:asin|productId)=([A-Z0-9]{10})/i) ||
+                  [])[1] || "";
+              web = url.href;
+            } catch {
+              return null;
+            }
+          } else asin = (raw.match(/^([A-Z0-9]{10})$/i) || [])[1] || "";
+          if (!asin) return null;
+          asin = asin.toUpperCase();
+          return {
+            asin,
+            web: web || "https://www.audible.de/pd/" + encodeURIComponent(asin),
+          };
+        }
+        $("runShortcut").onclick = () => {
+          const name = $("shortcutName").value.trim();
+          if (!name)
+            return setStatus(
+              "shortcutStatus",
+              "Bitte den Namen des Kurzbefehls eingeben.",
+              "warning",
+            );
+          localStorage.setItem("sehen-shortcut-name", name);
+          openExternal(
+            "shortcuts://run-shortcut?name=" + encodeURIComponent(name),
+            "Kurzbefehle",
+          );
+        };
+        $("openAudibleApp").onclick = () =>
+          openExternal("https://www.audible.de/library/titles", "Audible");
+        $("openAudibleWeb").onclick = () => {
+          const book = audibleBook();
+          if (!book)
+            return setStatus(
+              "audibleStatus",
+              "Bitte den vollständigen Audible-Link einfügen. Du findest ihn beim Hörbuch unter „Teilen“ → „Link kopieren“.",
+              "warning",
+            );
+          localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
+          openExternal(book.web, "Audible-Hörbuch");
+        };
+        $("openAudiblePlayer").onclick = () => {
+          const book = audibleBook();
+          if (!book)
+            return setStatus(
+              "audibleStatus",
+              "Bitte zuerst den Audible-Link des Hörbuchs einfügen.",
+              "warning",
+            );
+          localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
+          openExternal(
+            "audible://openplayer?asin=" + encodeURIComponent(book.asin),
+            "Audible-Direktlink",
+          );
+        };
+        function updateMagnifierZoom(change = 0) {
+          magnifierZoomIndex = Math.max(
+            0,
+            Math.min(
+              magnifierZoomLevels.length - 1,
+              magnifierZoomIndex + change,
+            ),
+          );
+          const zoom = magnifierZoomLevels[magnifierZoomIndex];
+          $("magnifierVideo").style.setProperty("--magnifier-zoom", zoom);
+          $("magnifierZoom").textContent = zoom + "×";
+          $("magnifierMinus").disabled = magnifierZoomIndex === 0;
+          $("magnifierPlus").disabled =
+            magnifierZoomIndex === magnifierZoomLevels.length - 1;
+        }
+        function updateMagnifierFilter(change = 0) {
+          magnifierFilterIndex =
+            (magnifierFilterIndex + change + magnifierFilters.length) %
+            magnifierFilters.length;
+          const video = $("magnifierVideo"),
+            [name, className] = magnifierFilters[magnifierFilterIndex];
+          magnifierFilters.forEach(([, filterClass]) => {
+            if (filterClass) video.classList.remove(filterClass);
+          });
+          if (className) video.classList.add(className);
+          $("magnifierFilter").textContent = "◐ KONTRAST: " + name;
+          localStorage.setItem(
+            "sehen-magnifier-filter",
+            String(magnifierFilterIndex),
+          );
+          setStatus(
+            "magnifierStatus",
+            "Kontrast: " + name.toLowerCase() + ".",
+            "success",
+          );
+        }
+        function rememberActiveCamera() {
+          const track = stream?.getVideoTracks()[0];
+          if (!track) return;
+          const settings = track.getSettings();
+          localStorage.setItem(
+            cameraKey,
+            JSON.stringify({
+              id: settings.deviceId || "",
+              label: track.label || "Kamera",
+              facingMode: settings.facingMode || "",
+            }),
+          );
+          showSaved();
+          log("Aktive Lupe-Kamera gespeichert: " + (track.label || "Kamera"));
+        }
+        async function startMagnifier() {
+          $("daily").classList.add("hidden");
+          $("magnifier").classList.remove("hidden");
+          document.body.classList.add("magnifier-open");
+          $("magnifier")
+            .requestFullscreen?.()
+            .catch(() => {});
+          setStatus("magnifierStatus", "Gespeicherte Kamera wird gestartet …");
+          magnifierFrozen = false;
+          $("magnifierFreeze").textContent = "❄ BILD ANHALTEN";
+          updateMagnifierFilter(0);
+          const ok = stream || (await restoreCamera());
+          if (!ok)
+            return setStatus(
+              "magnifierStatus",
+              "Kamera konnte nicht gestartet werden. USB-Verbindung und Berechtigung prüfen.",
+              "error",
+            );
+          await $("magnifierVideo")
+            .play()
+            .catch(() => {});
+          const track = stream.getVideoTracks()[0];
+          setStatus(
+            "magnifierStatus",
+            "Aktive Kamera: " + (track.label || "Kamera"),
+            "success",
+          );
+          updateMagnifierZoom(0);
+        }
+        async function switchMagnifierCamera() {
+          await findCameras();
+          if (devices.length < 2)
+            return setStatus(
+              "magnifierStatus",
+              "Keine weitere Kamera gefunden. USB-Kamera anschließen und erneut versuchen.",
+              "warning",
+            );
+          const currentId = stream?.getVideoTracks()[0]?.getSettings().deviceId,
+            index = devices.findIndex(
+              (device) => device.deviceId === currentId,
+            ),
+            next = devices[(index + 1 + devices.length) % devices.length];
+          setStatus(
+            "magnifierStatus",
+            "Wechsle zu " + (next.label || "Kamera") + " …",
+          );
+          if (await startCamera(next.deviceId)) {
+            rememberActiveCamera();
+            const track = stream.getVideoTracks()[0];
+            setStatus(
+              "magnifierStatus",
+              "Aktive Kamera: " + (track.label || next.label || "Kamera"),
+              "success",
+            );
+          } else
+            setStatus(
+              "magnifierStatus",
+              "Diese Kamera konnte nicht gestartet werden.",
+              "error",
+            );
+        }
+        function toggleMagnifierFreeze() {
+          if (!stream) return;
+          if (magnifierFrozen) {
+            $("magnifierVideo").play();
+            magnifierFrozen = false;
+            $("magnifierFreeze").textContent = "❄ BILD ANHALTEN";
+            setStatus("magnifierStatus", "Livebild läuft weiter.", "success");
+          } else {
+            $("magnifierVideo").pause();
+            magnifierFrozen = true;
+            $("magnifierFreeze").textContent = "▶ LIVEBILD FORTSETZEN";
+            setStatus("magnifierStatus", "Bild angehalten.", "success");
+          }
+        }
+        function closeMagnifier() {
+          stopCamera();
+          magnifierFrozen = false;
+          document.body.classList.remove("magnifier-open");
+          if (document.fullscreenElement)
+            document.exitFullscreen?.().catch(() => {});
+          $("magnifier").classList.add("hidden");
+          $("daily").classList.remove("hidden");
+          setDailyMode("home");
+          setStatus("dailyStatus", "Was möchtest du tun?");
+        }
+        function setDailyMode(mode) {
+          const home = mode === "home",
+            camera = mode === "camera",
+            result = mode === "result";
+          $("dailyHome").classList.toggle("hidden", !home);
+          $("dailyCameraWorkspace").classList.toggle("hidden", !camera);
+          $("dailyResultWorkspace").classList.toggle("hidden", !result);
+          document.body.classList.toggle("read-open", !home);
+        }
+        async function startDailyCamera() {
+          stopSpeech();
+          setDailyMode("camera");
+          setStatus("dailyStatus", "Kamera wird gestartet …");
+          $("dailyCapture").disabled = true;
+          const ok = stream || (await restoreCamera());
+          $("dailyCapture").disabled = !ok;
+          if (!ok) {
+            setStatus(
+              "dailyStatus",
+              "Kamera konnte nicht gestartet werden.",
+              "error",
+            );
+            return;
+          }
+          await $("dailyVideo")
+            .play()
+            .catch(() => {});
+          setStatus(
+            "dailyStatus",
+            "Text vollständig ins Bild legen und rechts auf „Foto lesen“ tippen.",
+            "success",
+          );
+        }
+        async function captureDailyText() {
+          if (!takePhoto()) return;
+          setStatus("dailyStatus", "Text wird erkannt und danach vorgelesen …");
+          $("dailyCapture").disabled = true;
+          await recognize(true);
+          setDailyMode("result");
+          $("dailyOutput").scrollTop = 0;
+          $("dailyCapture").disabled = false;
+        }
+        async function readFixedTestDaily() {
+          stopSpeech();
+          stopCamera();
+          setStatus("dailyStatus", "Festes Testbild wird geladen …");
+          if (!(await loadFixedTestImage())) return;
+          setStatus(
+            "dailyStatus",
+            "Festes Testbild wird erkannt und danach vorgelesen …",
+            "success",
+          );
+          await recognize(true);
+          setDailyMode("result");
+          $("dailyOutput").scrollTop = 0;
+        }
+        function closeDailyRead() {
+          stopSpeech();
+          stopCamera();
+          setDailyMode("home");
+          setStatus("dailyStatus", "Was möchtest du tun?");
+        }
+        function dailyStop() {
+          stopSpeech();
+          setStatus("dailyStatus", "Vorlesen gestoppt.", "success");
+        }
+        $("dailyRead").onclick = startDailyCamera;
+        $("dailyCapture").onclick = captureDailyText;
+        $("dailyTestImage").onclick = readFixedTestDaily;
+        $("dailyCameraClose").onclick = closeDailyRead;
+        $("dailyResultClose").onclick = closeDailyRead;
+        $("dailyNewText").onclick = startDailyCamera;
+        $("dailyScan").onclick = startScan;
+        $("dailyMagnifier").onclick = startMagnifier;
+        $("dailyAgain").onclick = speak;
+        $("dailyBook").onclick = () => {
+          const book = audibleBook();
+          if (!book)
+            return setStatus(
+              "dailyStatus",
+              "Der Hörbuch-Link fehlt. Bitte im Diagnosemodus prüfen.",
+              "warning",
+            );
+          localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
+          openExternal(book.web, "Audible-Hörbuch");
+        };
+        $("dailyStop").onclick = dailyStop;
+        $("scanCapture").onclick = captureScanRegion;
+        $("scanTestImage").onclick = useFixedTestForScan;
+        $("scanUndo").onclick = undoScanRegion;
+        $("scanFinish").onclick = finishScan;
+        $("scanCancel").onclick = closeScan;
+        $("scanPrevious").onclick = () => moveScan(-1);
+        $("scanNext").onclick = () => moveScan(1);
+        $("scanSpeak").onclick = () => speakScan(false);
+        $("scanSpeakAll").onclick = () => speakScan(true);
+        $("scanNew").onclick = startScan;
+        $("scanClose").onclick = closeScan;
+        $("magnifierMinus").onclick = () => updateMagnifierZoom(-1);
+        $("magnifierPlus").onclick = () => updateMagnifierZoom(1);
+        $("magnifierFreeze").onclick = toggleMagnifierFreeze;
+        $("magnifierFilter").onclick = () => updateMagnifierFilter(1);
+        $("magnifierCamera").onclick = switchMagnifierCamera;
+        $("magnifierClose").onclick = closeMagnifier;
+        $("recognize").onclick = () => recognize(false);
+        $("speak").onclick = speak;
+        $("stopSpeak").onclick = stopSpeech;
+        $("textSize").oninput = (event) =>
+          ($("ocrOutput").style.fontSize = event.target.value + "px");
+        document
+          .querySelectorAll("[data-test] button")
+          .forEach(
+            (button) =>
+              (button.onclick = () =>
+                saveResult(
+                  button.parentElement.dataset.test,
+                  button.dataset.result,
+                )),
+          );
+        $("notes").value = localStorage.getItem(notesKey) || "";
+        $("notes").oninput = (event) =>
+          localStorage.setItem(notesKey, event.target.value);
+        $("copyResults").onclick = copyResults;
+        $("resetResults").onclick = () => {
+          localStorage.removeItem(resultKey);
+          localStorage.removeItem(notesKey);
+          $("notes").value = "";
+          renderResults();
+          log("Testergebnisse zurückgesetzt.");
+        };
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") handleReturn();
+        });
+        window.addEventListener("pageshow", handleReturn);
+        window.addEventListener("pagehide", () => {
+          stopSpeech();
+          stopCamera();
+        });
+        $("shortcutName").value =
+          localStorage.getItem("sehen-shortcut-name") ||
+          $("shortcutName").value;
+        $("audibleId").value =
+          localStorage.getItem("sehen-audible-id") || defaultAudible;
+        if (new URLSearchParams(location.search).get("diagnose") === "1") {
+          document.body.classList.add("diagnosis-open");
+          $("lab").classList.remove("hidden");
+          log("Diagnosemodus aktiviert.");
+        }
+        showSaved();
+        renderResults();
+        log("Sehen geladen. Sicherer Kontext: " + isSecureContext);
+        if (!isSecureContext) {
+          setStatus(
+            "cameraStatus",
+            "Kamera benötigt HTTPS. Bitte die veröffentlichte Seite verwenden.",
+            "warning",
+          );
+          setStatus(
+            "dailyStatus",
+            "Kamera benötigt eine sichere HTTPS-Verbindung.",
+            "warning",
+          );
+        }
+      })();
+    </script>
+  </body>
+</html>
