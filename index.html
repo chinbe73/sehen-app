@@ -679,6 +679,18 @@
         color: #fff;
         font-size: clamp(1.25rem, 3vw, 1.65rem);
       }
+      .structure-diagnostics {
+        margin: 0;
+        padding: 12px;
+        border: 3px solid #315b82;
+        border-radius: 12px;
+        background: #eef6ff;
+        color: #10243a;
+        font-size: 0.92rem;
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
       .test-action {
         background: #ffd400 !important;
         border-color: #6b5100 !important;
@@ -931,7 +943,17 @@
               🔊 NOCHMALS VORLESEN</button
             ><button id="dailyNewText">📷 NEUEN TEXT LESEN</button
             ><button id="dailyStop" class="danger">■ VORLESEN STOPPEN</button
+            ><button id="dailyCopyDiagnostics" class="test-action" disabled>
+              DIAGNOSE KOPIEREN</button
             ><button id="dailyResultClose" class="danger">← SCHLIESSEN</button>
+            <p
+              id="dailyStructure"
+              class="structure-diagnostics"
+              role="status"
+              aria-live="polite"
+            >
+              Noch keine Strukturdaten vorhanden.
+            </p>
           </div>
         </div>
         <div id="dailyAudibleWorkspace" class="workflow daily-workflow hidden">
@@ -2227,9 +2249,13 @@
               );
           let excluded = 0,
             signatureFound = false,
-            articleLength = 0;
+            articleLength = 0,
+            used = 0;
+          const roleCounts = {};
           const paragraphs = [];
           for (const [index, paragraph] of (result.paragraphs || []).entries()) {
+            const role = paragraph.role || "ohne Rolle";
+            roleCounts[role] = (roleCounts[role] || 0) + 1;
             let text = (paragraph.content || "")
               .trim()
               .replace(/[ \t]+/g, " ")
@@ -2278,6 +2304,7 @@
               source += " " + text;
             else source += "\n\n" + text;
             previous = text;
+            used++;
             if (paragraph.signature) {
               signatureFound = true;
               break;
@@ -2293,6 +2320,12 @@
               .trim(),
             excluded,
             signatureFound,
+            used,
+            figureParagraphs: figureParagraphs.size,
+            figureBoxes: figureBoxes.length,
+            roles: Object.entries(roleCounts)
+              .map(([role, count]) => role + "=" + count)
+              .join(", "),
           };
         }
         async function recognizeDocumentCloud(image, onStage = () => {}) {
@@ -2369,9 +2402,9 @@
                 throw new Error("Die Dokumentanalyse ist fehlgeschlagen.");
               if (result.status === "succeeded") {
                 const analyzed = result.analyzeResult || {},
-                  readable = readableAzureParagraphs(analyzed);
-                log(
-                  "Azure-Struktur: Seiten " +
+                  readable = readableAzureParagraphs(analyzed),
+                  diagnostics =
+                    "Azure-Struktur: Seiten " +
                     (analyzed.pages?.length || 0) +
                     "; Absätze " +
                     (analyzed.paragraphs?.length || 0) +
@@ -2382,12 +2415,21 @@
                     "; ausgeblendet " +
                     readable.excluded +
                     "; Autorende " +
-                    readable.signatureFound,
-                );
+                    readable.signatureFound +
+                    "; Bildabsätze " +
+                    readable.figureParagraphs +
+                    "; Bildrahmen " +
+                    readable.figureBoxes +
+                    "; verwendet " +
+                    readable.used +
+                    "; Rollen: " +
+                    readable.roles;
+                log(diagnostics);
                 return {
                   text: readable.text,
                   columns: 0,
                   paragraphs: analyzed.paragraphs?.length || 0,
+                  diagnostics,
                 };
               }
             }
@@ -2443,6 +2485,11 @@
             text = layout.text;
             $("ocrOutput").textContent = text || "Kein Text erkannt.";
             $("dailyOutput").textContent = text || "Kein Text erkannt.";
+            $("dailyStructure").textContent =
+              layout.diagnostics || "Keine Strukturdaten verfügbar.";
+            $("dailyCopyDiagnostics").dataset.diagnostics =
+              layout.diagnostics || "";
+            $("dailyCopyDiagnostics").disabled = !layout.diagnostics;
             $("speak").disabled = !text;
             $("dailyAgain").disabled = !text;
             const message = text
@@ -2462,6 +2509,11 @@
             );
             if (autoSpeak && text) speak();
           } catch (error) {
+            $("dailyStructure").textContent =
+              "Erkennungsfehler: " + error.message;
+            $("dailyCopyDiagnostics").dataset.diagnostics =
+              "Erkennungsfehler: " + error.message;
+            $("dailyCopyDiagnostics").disabled = false;
             setStatus(
               "ocrStatus",
               "Texterkennung fehlgeschlagen: " + error.message,
@@ -3192,6 +3244,29 @@
         $("dailyScan").onclick = startScan;
         $("dailyMagnifier").onclick = startMagnifier;
         $("dailyAgain").onclick = speak;
+        $("dailyCopyDiagnostics").onclick = () => {
+          const diagnostics =
+              $("dailyCopyDiagnostics").dataset.diagnostics ||
+              $("dailyStructure").textContent,
+            recognizedText = $("dailyOutput").textContent,
+            copyText = diagnostics + "\n\nERKANNTER TEXT:\n" + recognizedText;
+          navigator.clipboard
+            .writeText(copyText)
+            .then(() =>
+              setStatus(
+                "dailyStatus",
+                "Diagnose und erkannter Text wurden kopiert.",
+                "success",
+              ),
+            )
+            .catch((error) =>
+              setStatus(
+                "dailyStatus",
+                "Kopieren fehlgeschlagen: " + error.message,
+                "error",
+              ),
+            );
+        };
         function dailyAudibleBook() {
           const book = audibleBook();
           if (!book) {
