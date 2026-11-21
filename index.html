@@ -730,6 +730,14 @@
       .daily-home-output {
         display: none;
       }
+      .audible-test-panel {
+        height: 100%;
+        overflow-y: auto;
+        padding: 20px;
+        background: #fff;
+        border: 3px solid #784200;
+        border-radius: 14px;
+      }
       body.read-open {
         max-width: none;
         margin: 0;
@@ -924,6 +932,31 @@
             ><button id="dailyNewText">📷 NEUEN TEXT LESEN</button
             ><button id="dailyStop" class="danger">■ VORLESEN STOPPEN</button
             ><button id="dailyResultClose" class="danger">← SCHLIESSEN</button>
+          </div>
+        </div>
+        <div id="dailyAudibleWorkspace" class="workflow daily-workflow hidden">
+          <div class="workflow-main audible-test-panel">
+            <h2>Hörbuch öffnen – Testvarianten</h2>
+            <p>
+              Diese Versuche öffnen nur die Audible-App. Es gibt keinen
+              automatischen Wechsel zur Audible-Webseite.
+            </p>
+            <p id="dailyAudibleDiagnostics" class="status" role="status">
+              Bitte eine Variante wählen.
+            </p>
+          </div>
+          <div class="workflow-actions">
+            <button id="dailyAudibleBookLink" class="main-action">
+              1 · HÖRBUCH IN APP ÖFFNEN
+            </button>
+            <button id="dailyAudiblePlayer" class="secondary">
+              2 · DIREKT ZUM PLAYER
+            </button>
+            <button id="dailyAudibleApp" class="secondary">
+              3 · NUR AUDIBLE ÖFFNEN
+            </button>
+            <button id="dailyAudibleCopy">DIAGNOSE KOPIEREN</button>
+            <button id="dailyAudibleClose" class="danger">← SCHLIESSEN</button>
           </div>
         </div>
       </section>
@@ -1664,8 +1697,19 @@
               " Sekunden erkannt.",
             "success",
           );
-          setDailyMode("home");
+          const audibleReturn = stored.target.startsWith("Audible");
+          setDailyMode(audibleReturn ? "audible" : "home");
           setStatus("dailyStatus", "Zurück bei Sehen.", "success");
+          if (audibleReturn)
+            setStatus(
+              "dailyAudibleDiagnostics",
+              "Rückkehr von " +
+                stored.target +
+                " nach " +
+                seconds +
+                " Sekunden erkannt.",
+              "success",
+            );
           sessionStorage.removeItem("sehen-departure");
           setTimeout(() => $("returnBanner").classList.add("hidden"), 10000);
         }
@@ -2874,10 +2918,12 @@
         function setDailyMode(mode) {
           const home = mode === "home",
             camera = mode === "camera",
-            result = mode === "result";
+            result = mode === "result",
+            audible = mode === "audible";
           $("dailyHome").classList.toggle("hidden", !home);
           $("dailyCameraWorkspace").classList.toggle("hidden", !camera);
           $("dailyResultWorkspace").classList.toggle("hidden", !result);
+          $("dailyAudibleWorkspace").classList.toggle("hidden", !audible);
           document.body.classList.toggle("read-open", !home);
         }
         async function startDailyCamera() {
@@ -2946,21 +2992,85 @@
         $("dailyScan").onclick = startScan;
         $("dailyMagnifier").onclick = startMagnifier;
         $("dailyAgain").onclick = speak;
-        $("dailyBook").onclick = () => {
+        function dailyAudibleBook() {
           const book = audibleBook();
-          if (!book)
-            return setStatus(
+          if (!book) {
+            setStatus(
               "dailyStatus",
               "Der Hörbuch-Link fehlt. Bitte im Diagnosemodus prüfen.",
               "warning",
             );
+            return null;
+          }
           localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
+          return book;
+        }
+        $("dailyBook").onclick = () => {
+          if (!dailyAudibleBook()) return;
+          setDailyMode("audible");
           setStatus(
             "dailyStatus",
-            "Audible-App wird geöffnet …",
+            "Welche Audible-Variante möchtest du testen?",
             "success",
           );
-          openExternal(book.app, "Audible-Hörbuch", "dailyStatus");
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Bitte eine Variante wählen.",
+          );
+        };
+        $("dailyAudibleBookLink").onclick = () => {
+          const book = dailyAudibleBook();
+          if (!book) return;
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Variante 1: Hörbuch-Link wird an die Audible-App übergeben …",
+          );
+          openExternal(book.app, "Audible-Hörbuch · Variante 1", "dailyAudibleDiagnostics");
+        };
+        $("dailyAudiblePlayer").onclick = () => {
+          const book = dailyAudibleBook();
+          if (!book) return;
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Variante 2: Der Audible-Player wird mit der ASIN geöffnet …",
+          );
+          openExternal(
+            "audible://openplayer?asin=" + encodeURIComponent(book.asin),
+            "Audible-Player · Variante 2",
+            "dailyAudibleDiagnostics",
+          );
+        };
+        $("dailyAudibleApp").onclick = () => {
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Variante 3: Nur die Audible-App wird geöffnet …",
+          );
+          openExternal(
+            "audible://",
+            "Audible-App · Variante 3",
+            "dailyAudibleDiagnostics",
+          );
+        };
+        $("dailyAudibleCopy").onclick = () =>
+          navigator.clipboard
+            .writeText(events.slice(-60).join("\n"))
+            .then(() =>
+              setStatus(
+                "dailyAudibleDiagnostics",
+                "Diagnose wurde kopiert.",
+                "success",
+              ),
+            )
+            .catch((error) =>
+              setStatus(
+                "dailyAudibleDiagnostics",
+                "Kopieren fehlgeschlagen: " + error.message,
+                "error",
+              ),
+            );
+        $("dailyAudibleClose").onclick = () => {
+          setDailyMode("home");
+          setStatus("dailyStatus", "Was möchtest du tun?");
         };
         $("dailyStop").onclick = dailyStop;
         $("scanCapture").onclick = captureScanRegion;
