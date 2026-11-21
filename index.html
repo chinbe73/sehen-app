@@ -332,27 +332,6 @@
         border-color: #784200;
         color: #fff;
       }
-      .quota-summary {
-        grid-column: 1/-1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        padding: 12px;
-        border: 3px solid #315b82;
-        border-radius: 14px;
-        background: #eef6ff;
-        color: #10243a;
-        font-weight: 850;
-      }
-      .quota-summary span {
-        display: block;
-        line-height: 1.35;
-      }
-      .quota-summary .quota-note {
-        grid-column: 1/-1;
-        font-size: 0.78rem;
-        font-weight: 700;
-      }
       .daily-output {
         min-height: 0;
         font-size: clamp(1.7rem, 6vw, 3rem);
@@ -978,13 +957,6 @@
           ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
           ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
-          <div id="quotaSummary" class="quota-summary" role="status">
-            <span id="documentQuota">Dokumentanalyse wird geladen …</span>
-            <span id="speechQuota">Sprachausgabe wird geladen …</span>
-            <span id="quotaNote" class="quota-note">
-              Lokaler Zähler dieser App; Azure-Portal ist verbindlich.
-            </span>
-          </div>
         </div>
         <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main camera-stage">
@@ -1442,7 +1414,6 @@
           cameraKey = "sehen-camera-v2",
           resultKey = "sehen-spikes-v1",
           notesKey = "sehen-spike-notes-v1",
-          usageKey = "sehen-azure-usage-v1",
           speechKeyStorage = "sehen-azure-speech-key",
           speechRegionStorage = "sehen-azure-speech-region",
           speechVoiceStorage = "sehen-azure-speech-voice",
@@ -1497,67 +1468,6 @@
           },
           savedCamera = () => readJSON(cameraKey, null),
           results = () => readJSON(resultKey, {});
-        function currentMonth() {
-          const now = new Date();
-          return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-        }
-        function azureUsage() {
-          const saved = readJSON(usageKey, {}),
-            month = currentMonth();
-          if (saved.month === month)
-            return {
-              month,
-              pages: Number(saved.pages) || 0,
-              speechCharacters: Number(saved.speechCharacters) || 0,
-              startedAt: saved.startedAt || new Date().toISOString(),
-            };
-          const fresh = {
-            month,
-            pages: 0,
-            speechCharacters: 0,
-            startedAt: new Date().toISOString(),
-          };
-          localStorage.setItem(usageKey, JSON.stringify(fresh));
-          return fresh;
-        }
-        function addAzureUsage(field, amount) {
-          const usage = azureUsage();
-          usage[field] = Math.max(0, (Number(usage[field]) || 0) + amount);
-          localStorage.setItem(usageKey, JSON.stringify(usage));
-          renderAzureUsage();
-        }
-        function renderAzureUsage() {
-          const usage = azureUsage(),
-            pageLimit = 500,
-            speechLimit = 500000,
-            pageRemaining = Math.max(0, pageLimit - usage.pages),
-            speechRemaining = Math.max(
-              0,
-              speechLimit - usage.speechCharacters,
-            );
-          $("documentQuota").textContent =
-            "Dokumentanalyse in Sehen: noch " +
-            pageRemaining.toLocaleString("de-CH") +
-            " von " +
-            pageLimit.toLocaleString("de-CH") +
-            " Seiten";
-          $("speechQuota").textContent =
-            speechSettings().key
-              ? "Azure-Sprache in Sehen: noch " +
-                speechRemaining.toLocaleString("de-CH") +
-                " von " +
-                speechLimit.toLocaleString("de-CH") +
-                " Zeichen"
-              : "Azure-Sprache noch nicht eingerichtet · F0: " +
-                speechLimit.toLocaleString("de-CH") +
-                " Zeichen/Monat";
-          $("quotaNote").textContent =
-            "Lokaler Zähler seit " +
-            new Date(usage.startedAt).toLocaleDateString("de-CH") +
-            "; das Azure-Portal bleibt verbindlich.";
-          $("quotaSummary").title =
-            "Lokaler Monatszähler dieser App ab Version 12. Die offiziellen Werte stehen im Azure-Portal.";
-        }
         const log = (message) => {
           events.push(
             "[" + new Date().toLocaleTimeString("de-CH") + "] " + message,
@@ -2708,7 +2618,6 @@
                     "; Rollen: " +
                     readable.roles;
                 log(diagnostics);
-                addAzureUsage("pages", analyzed.pages?.length || 1);
                 return {
                   text: readable.text,
                   blocks: readable.blocks,
@@ -2848,7 +2757,6 @@
               );
             }
             const audio = await response.blob();
-            addAzureUsage("speechCharacters", chunk.length);
             setStatus(
               statusId,
               "Azure-Stimme liest Abschnitt " +
@@ -3781,7 +3689,6 @@
           localStorage.setItem(speechKeyStorage, key);
           localStorage.setItem(speechRegionStorage, region);
           $("speechKey").value = "";
-          renderAzureUsage();
           setStatus(
             "speechStatus",
             "Azure Speech ist gespeichert. Bitte jetzt eine Stimme testen.",
@@ -3794,7 +3701,6 @@
           localStorage.removeItem(speechRegionStorage);
           localStorage.removeItem(speechVoiceStorage);
           $("speechKey").value = "";
-          renderAzureUsage();
           setStatus(
             "speechStatus",
             "Azure Speech wurde von diesem iPad entfernt.",
@@ -4043,7 +3949,6 @@
           $("lab").classList.remove("hidden");
           log("Diagnosemodus aktiviert.");
         }
-        renderAzureUsage();
         showSaved();
         renderResults();
         log(
