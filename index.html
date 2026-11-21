@@ -2153,33 +2153,147 @@
           return key;
         }
         function readableAzureParagraphs(result) {
-          const paragraphs = (result.paragraphs || [])
-              .filter(
-                (paragraph) =>
-                  ![
-                    "pageHeader",
-                    "pageFooter",
-                    "pageNumber",
-                    "footnote",
-                  ].includes(paragraph.role),
-              )
-              .filter((paragraph) => (paragraph.content || "").trim())
-              .sort(
-                (a, b) =>
-                  (a.spans?.[0]?.offset ?? 0) -
-                  (b.spans?.[0]?.offset ?? 0),
-              ),
-            source = paragraphs.length
-              ? paragraphs
-                  .map((paragraph) => paragraph.content.trim())
-                  .join("\n\n")
-              : (result.content || "").trim();
-          return source
-            .replace(/([\p{L}])-\s+([\p{Ll}])/gu, "$1$2")
-            .replace(/[ \t]+/g, " ")
-            .replace(/\n[ \t]+/g, "\n")
-            .replace(/\n{3,}/g, "\n\n")
-            .trim();
+          const pages = new Map(
+              (result.pages || []).map((page) => [page.pageNumber, page]),
+            ),
+            figureParagraphs = new Set(),
+            figureBoxes = [];
+          for (const figure of result.figures || []) {
+            for (const element of figure.elements || []) {
+              const match = element.match(/\/paragraphs\/(\d+)/);
+              if (match) figureParagraphs.add(Number(match[1]));
+            }
+            for (const region of figure.boundingRegions || []) {
+              const polygon = region.polygon || [];
+              if (polygon.length < 8) continue;
+              const xs = polygon.filter((_, index) => index % 2 === 0),
+                ys = polygon.filter((_, index) => index % 2 === 1);
+              figureBoxes.push({
+                pageNumber: region.pageNumber,
+                x0: Math.min(...xs),
+                x1: Math.max(...xs),
+                y0: Math.min(...ys),
+                y1: Math.max(...ys),
+              });
+            }
+          }
+          const centerOf = (paragraph) => {
+              const region = paragraph.boundingRegions?.[0],
+                polygon = region?.polygon || [];
+              if (!region || polygon.length < 8) return null;
+              const xs = polygon.filter((_, index) => index % 2 === 0),
+                ys = polygon.filter((_, index) => index % 2 === 1);
+              return {
+                pageNumber: region.pageNumber,
+                x: xs.reduce((sum, value) => sum + value, 0) / xs.length,
+                y: ys.reduce((sum, value) => sum + value, 0) / ys.length,
+              };
+            },
+            uprightCenter = (paragraph) => {
+              const center = centerOf(paragraph),
+                page = center && pages.get(center.pageNumber);
+              if (!center || !page) return center;
+              const radians = (-(page.angle || 0) * Math.PI) / 180,
+                cosine = Math.cos(radians),
+                sine = Math.sin(radians),
+                dx = center.x - page.width / 2,
+                dy = center.y - page.height / 2;
+              return {
+                ...center,
+                x: cosine * dx - sine * dy + page.width / 2,
+                y: sine * dx + cosine * dy + page.height / 2,
+                page,
+              };
+            },
+            insideFigure = (paragraph) => {
+              if (["title", "sectionHeading"].includes(paragraph.role))
+                return false;
+              const center = centerOf(paragraph);
+              return (
+                center &&
+                figureBoxes.some(
+                  (box) =>
+                    box.pageNumber === center.pageNumber &&
+                    center.x >= box.x0 &&
+                    center.x <= box.x1 &&
+                    center.y >= box.y0 &&
+                    center.y <= box.y1,
+                )
+              );
+            },
+            nameLike = (text) =>
+              /^[\p{Lu}][\p{L}’'’-]+(?:\s+[\p{Lu}][\p{L}’'’-]+){1,3}$/u.test(
+                text,
+              );
+          let excluded = 0,
+            signatureFound = false,
+            articleLength = 0;
+          const paragraphs = [];
+          for (const [index, paragraph] of (result.paragraphs || []).entries()) {
+            let text = (paragraph.content || "")
+              .trim()
+              .replace(/[ \t]+/g, " ")
+              .replace(/\n[ \t]+/g, "\n");
+            if (!text) continue;
+            const visible = text.replace(/\s/g, ""),
+              letters = (visible.match(/\p{L}/gu) || []).length,
+              center = uprightCenter(paragraph),
+              nearBottom =
+                center?.page && center.y > center.page.height * 0.76,
+              signature =
+                nameLike(text) &&
+                (paragraph.role === "pageFooter" || nearBottom) &&
+                articleLength > 600;
+            if (
+              ["pageHeader", "pageNumber", "footnote"].includes(
+                paragraph.role,
+              ) ||
+              (paragraph.role === "pageFooter" && !signature) ||
+              figureParagraphs.has(index) ||
+              insideFigure(paragraph) ||
+              (visible.length <= 20 && letters < 3)
+            ) {
+              excluded++;
+              continue;
+            }
+            paragraphs.push({
+              text,
+              offset: paragraph.spans?.[0]?.offset ?? Number.MAX_SAFE_INTEGER,
+              signature,
+            });
+            articleLength += text.length;
+          }
+          paragraphs.sort((a, b) => a.offset - b.offset);
+          let source = "",
+            previous = "";
+          for (const paragraph of paragraphs) {
+            const text = paragraph.text;
+            if (!source) source = text;
+            else if (/[-¬]$/.test(previous) && /^\p{Ll}/u.test(text))
+              source = source.slice(0, -1) + text;
+            else if (
+              !/[.!?…:;»”)]$/.test(previous) &&
+              /^\p{Ll}/u.test(text)
+            )
+              source += " " + text;
+            else source += "\n\n" + text;
+            previous = text;
+            if (paragraph.signature) {
+              signatureFound = true;
+              break;
+            }
+          }
+          if (!source) source = (result.content || "").trim();
+          return {
+            text: source
+              .replace(/([\p{L}])-\s+([\p{Ll}])/gu, "$1$2")
+              .replace(/[ \t]+/g, " ")
+              .replace(/\n[ \t]+/g, "\n")
+              .replace(/\n{3,}/g, "\n\n")
+              .trim(),
+            excluded,
+            signatureFound,
+          };
         }
         async function recognizeDocumentCloud(image, onStage = () => {}) {
           onStage("Dokument wird direkt mit Azure analysiert …");
@@ -2254,9 +2368,24 @@
               if (!poll.ok || result.status === "failed")
                 throw new Error("Die Dokumentanalyse ist fehlgeschlagen.");
               if (result.status === "succeeded") {
-                const analyzed = result.analyzeResult || {};
+                const analyzed = result.analyzeResult || {},
+                  readable = readableAzureParagraphs(analyzed);
+                log(
+                  "Azure-Struktur: Seiten " +
+                    (analyzed.pages?.length || 0) +
+                    "; Absätze " +
+                    (analyzed.paragraphs?.length || 0) +
+                    "; Bilder " +
+                    (analyzed.figures?.length || 0) +
+                    "; Tabellen " +
+                    (analyzed.tables?.length || 0) +
+                    "; ausgeblendet " +
+                    readable.excluded +
+                    "; Autorende " +
+                    readable.signatureFound,
+                );
                 return {
-                  text: readableAzureParagraphs(analyzed),
+                  text: readable.text,
                   columns: 0,
                   paragraphs: analyzed.paragraphs?.length || 0,
                 };
