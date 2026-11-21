@@ -1162,7 +1162,7 @@
           aus dem Link, zum Beispiel B0XXXXXXXX.
         </p>
         <div class="actions">
-          <button id="openAudibleWeb">Dieses Hörbuch öffnen</button
+          <button id="openAudibleWeb">Dieses Hörbuch in Audible öffnen</button
           ><button id="openAudiblePlayer">Direktwiedergabe testen</button>
         </div>
         <p id="audibleStatus" class="status">
@@ -1600,13 +1600,41 @@
             );
           }
         }
-        function openExternal(url, target) {
+        function openExternal(url, target, statusId = "") {
           sessionStorage.setItem(
             "sehen-departure",
             JSON.stringify({ at: Date.now(), target }),
           );
-          log("App-Wechsel gestartet: " + target);
+          let didHide = false;
+          const scheme = (url.match(/^([a-z][a-z0-9+.-]*):/i) || [
+            "",
+            "unbekannt",
+          ])[1];
+          const observeDeparture = () => {
+            if (document.visibilityState !== "hidden") return;
+            didHide = true;
+            log("App-Wechsel bestätigt: " + target + "; Schema: " + scheme);
+            document.removeEventListener("visibilitychange", observeDeparture);
+          };
+          document.addEventListener("visibilitychange", observeDeparture);
+          log(
+            "App-Wechsel gestartet: " +
+              target +
+              "; Schema: " +
+              scheme +
+              "; Anzeige: " +
+              document.visibilityState,
+          );
           location.href = url;
+          setTimeout(() => {
+            document.removeEventListener("visibilitychange", observeDeparture);
+            if (didHide || document.visibilityState !== "visible") return;
+            const message =
+              target +
+              " wurde nicht geöffnet. In Web-Kiosk „Unbekannte externe URL-Schemata blockieren“ ausschalten und Audible im unterstützenden Zugriff erlauben.";
+            log(message);
+            if (statusId) setStatus(statusId, message, "error");
+          }, 2200);
         }
         function handleReturn() {
           let stored = null;
@@ -2651,6 +2679,12 @@
           return {
             asin,
             web: web || "https://www.audible.de/pd/" + encodeURIComponent(asin),
+            app:
+              "audible://" +
+              (web || "www.audible.de/pd/" + encodeURIComponent(asin)).replace(
+                /^https?:\/\//i,
+                "",
+              ),
           };
         }
         $("runShortcut").onclick = () => {
@@ -2665,10 +2699,11 @@
           openExternal(
             "shortcuts://run-shortcut?name=" + encodeURIComponent(name),
             "Kurzbefehle",
+            "shortcutStatus",
           );
         };
         $("openAudibleApp").onclick = () =>
-          openExternal("https://www.audible.de/library/titles", "Audible");
+          openExternal("audible://", "Audible", "audibleStatus");
         $("openAudibleWeb").onclick = () => {
           const book = audibleBook();
           if (!book)
@@ -2678,7 +2713,11 @@
               "warning",
             );
           localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
-          openExternal(book.web, "Audible-Hörbuch");
+          openExternal(
+            book.app,
+            "Audible-Hörbuch",
+            "audibleStatus",
+          );
         };
         $("openAudiblePlayer").onclick = () => {
           const book = audibleBook();
@@ -2692,6 +2731,7 @@
           openExternal(
             "audible://openplayer?asin=" + encodeURIComponent(book.asin),
             "Audible-Direktlink",
+            "audibleStatus",
           );
         };
         function updateMagnifierZoom(change = 0) {
@@ -2915,7 +2955,12 @@
               "warning",
             );
           localStorage.setItem("sehen-audible-id", $("audibleId").value.trim());
-          openExternal(book.web, "Audible-Hörbuch");
+          setStatus(
+            "dailyStatus",
+            "Audible-App wird geöffnet …",
+            "success",
+          );
+          openExternal(book.app, "Audible-Hörbuch", "dailyStatus");
         };
         $("dailyStop").onclick = dailyStop;
         $("scanCapture").onclick = captureScanRegion;
@@ -2962,13 +3007,49 @@
           log("Testergebnisse zurückgesetzt.");
         };
         document.addEventListener("visibilitychange", () => {
+          log("Sichtbarkeit geändert: " + document.visibilityState);
           if (document.visibilityState === "visible") handleReturn();
         });
-        window.addEventListener("pageshow", handleReturn);
-        window.addEventListener("pagehide", () => {
+        window.addEventListener("pageshow", (event) => {
+          log("Seite angezeigt; aus Zwischenspeicher: " + event.persisted);
+          handleReturn();
+        });
+        window.addEventListener("pagehide", (event) => {
+          log("Seite verlassen; im Zwischenspeicher: " + event.persisted);
           stopSpeech();
           stopCamera();
         });
+        window.addEventListener("error", (event) =>
+          log(
+            "Browserfehler: " +
+              (event.message || "unbekannt") +
+              (event.filename
+                ? " · " + event.filename.split("/").pop() + ":" + event.lineno
+                : ""),
+          ),
+        );
+        window.addEventListener("unhandledrejection", (event) =>
+          log(
+            "Nicht behandelter Fehler: " +
+              (event.reason?.message || String(event.reason || "unbekannt")),
+          ),
+        );
+        window.addEventListener("online", () => log("Netzwerk: online"));
+        window.addEventListener("offline", () => log("Netzwerk: offline"));
+        document.addEventListener(
+          "click",
+          (event) => {
+            const button = event.target.closest("button, a");
+            if (!button) return;
+            log(
+              "Bedienung: " +
+                (button.id || button.getAttribute("href") || "ohne Kennung") +
+                " · " +
+                (button.textContent || "").trim().replace(/\s+/g, " "),
+            );
+          },
+          true,
+        );
         $("shortcutName").value =
           localStorage.getItem("sehen-shortcut-name") ||
           $("shortcutName").value;
@@ -2981,7 +3062,20 @@
         }
         showSaved();
         renderResults();
-        log("Sehen geladen. Sicherer Kontext: " + isSecureContext);
+        log(
+          "Sehen geladen. Sicherer Kontext: " +
+            isSecureContext +
+            "; Anzeige: " +
+            (window.matchMedia("(display-mode: standalone)").matches
+              ? "eigenständig"
+              : "Browser") +
+            "; Online: " +
+            navigator.onLine +
+            "; Fenster: " +
+            window.innerWidth +
+            " × " +
+            window.innerHeight,
+        );
         if (!isSecureContext) {
           setStatus(
             "cameraStatus",
