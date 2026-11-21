@@ -910,7 +910,7 @@
           <button id="dailyRead" class="read">📖 SCHNELL LESEN</button
           ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
-          ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
+          ><button id="dailyBook" class="book">🎧 HÖRBUCH IN AUDIBLE</button>
         </div>
         <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main camera-stage">
@@ -3281,17 +3281,14 @@
           return book;
         }
         $("dailyBook").onclick = () => {
-          if (!dailyAudibleBook()) return;
-          setDailyMode("audible");
+          const book = dailyAudibleBook();
+          if (!book) return;
           setStatus(
             "dailyStatus",
-            "Welche Audible-Variante möchtest du testen?",
+            "Das Hörbuch wird in Audible geöffnet. Dort einmal auf Wiedergabe tippen.",
             "success",
           );
-          setStatus(
-            "dailyAudibleDiagnostics",
-            "Bitte eine Variante wählen.",
-          );
+          openExternal(book.app, "Audible-Hörbuch", "dailyStatus");
         };
         $("dailyAudibleBookLink").onclick = () => {
           const book = dailyAudibleBook();
