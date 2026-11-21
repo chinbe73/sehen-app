@@ -2061,27 +2061,65 @@
             });
           }
         }
-        const imageBlob = (image) =>
-          image instanceof HTMLCanvasElement
-            ? new Promise((resolve, reject) =>
-                image.toBlob(
-                  (blob) =>
-                    blob
-                      ? resolve(blob)
-                      : reject(
-                          new Error(
-                            "Das Foto konnte nicht vorbereitet werden.",
-                          ),
-                        ),
-                  "image/jpeg",
-                  0.92,
-                ),
-              )
-            : typeof image === "string"
-              ? fetch(image).then((result) => result.blob())
-              : Promise.reject(
-                  new Error("Das Fotoformat wird nicht unterstützt."),
-                );
+        const azureImageLimit = 3_750_000;
+        const canvasToJpeg = (canvas, quality) =>
+          new Promise((resolve, reject) =>
+            canvas.toBlob(
+              (blob) =>
+                blob
+                  ? resolve(blob)
+                  : reject(
+                      new Error("Das Foto konnte nicht vorbereitet werden."),
+                    ),
+              "image/jpeg",
+              quality,
+            ),
+          );
+        async function compactCanvasForAzure(source) {
+          const scale = Math.min(
+              1,
+              3000 / Math.max(source.width, source.height),
+            ),
+            canvas = document.createElement("canvas");
+          canvas.width = Math.round(source.width * scale);
+          canvas.height = Math.round(source.height * scale);
+          canvas
+            .getContext("2d", { alpha: false })
+            .drawImage(source, 0, 0, canvas.width, canvas.height);
+          let blob = null;
+          for (const quality of [0.86, 0.76, 0.66, 0.56, 0.46]) {
+            blob = await canvasToJpeg(canvas, quality);
+            if (blob.size <= azureImageLimit) return blob;
+          }
+          const smaller = document.createElement("canvas"),
+            secondScale = Math.min(1, 2400 / Math.max(canvas.width, canvas.height));
+          smaller.width = Math.round(canvas.width * secondScale);
+          smaller.height = Math.round(canvas.height * secondScale);
+          smaller
+            .getContext("2d", { alpha: false })
+            .drawImage(canvas, 0, 0, smaller.width, smaller.height);
+          blob = await canvasToJpeg(smaller, 0.62);
+          if (blob.size > azureImageLimit)
+            throw new Error(
+              "Das Foto bleibt trotz Verkleinerung zu gross für Azure.",
+            );
+          return blob;
+        }
+        async function imageBlob(image) {
+          if (image instanceof HTMLCanvasElement)
+            return compactCanvasForAzure(image);
+          if (typeof image !== "string")
+            throw new Error("Das Fotoformat wird nicht unterstützt.");
+          const response = await fetch(image),
+            blob = await response.blob();
+          if (blob.size <= azureImageLimit) return blob;
+          const bitmap = await createImageBitmap(blob);
+          try {
+            return await compactCanvasForAzure(bitmap);
+          } finally {
+            bitmap.close?.();
+          }
+        }
         const azureEndpoint =
             "https://sehen-dokumente-20261116.cognitiveservices.azure.com",
           azureKeyStorage = "sehen-azure-document-key";
@@ -2147,6 +2185,12 @@
               body: blob,
               cache: "no-store",
             });
+          log(
+            "Azure-Anfrage: " +
+              Math.round(blob.size / 1024) +
+              " KB; Typ: " +
+              (blob.type || "unbekannt"),
+          );
           if (response.status === 401 || response.status === 403) {
             localStorage.removeItem(azureKeyStorage);
             throw new Error(
@@ -2162,11 +2206,26 @@
             try {
               detail = await response.json();
             } catch {}
-            const reason =
-              detail.error?.message ||
-              detail.message ||
-              "Azure konnte das Dokument nicht analysieren.";
-            throw new Error("Azure-Fehler " + response.status + ": " + reason);
+            const azureError = detail.error || {},
+              innerError = azureError.innererror || azureError.innerError || {},
+              reason =
+                innerError.message ||
+                azureError.message ||
+                detail.message ||
+                "Azure konnte das Dokument nicht analysieren.",
+              codes = [azureError.code, innerError.code]
+                .filter(Boolean)
+                .join("/");
+            throw new Error(
+              "Azure-Fehler " +
+                response.status +
+                (codes ? " (" + codes + ")" : "") +
+                ": " +
+                reason +
+                " · Datei: " +
+                Math.round(blob.size / 1024) +
+                " KB",
+            );
           }
           const operationLocation =
             response.headers.get("operation-location") || "";
