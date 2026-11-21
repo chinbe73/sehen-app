@@ -941,6 +941,9 @@
               Diese Versuche öffnen nur die Audible-App. Es gibt keinen
               automatischen Wechsel zur Audible-Webseite.
             </p>
+            <p class="notice">
+              Variante 4 benötigt den Kurzbefehl „Sehen – Hörbuch starten“.
+            </p>
             <p id="dailyAudibleDiagnostics" class="status" role="status">
               Bitte eine Variante wählen.
             </p>
@@ -954,6 +957,9 @@
             </button>
             <button id="dailyAudibleApp" class="secondary">
               3 · NUR AUDIBLE ÖFFNEN
+            </button>
+            <button id="dailyAudibleShortcut" class="test-action">
+              4 · KURZBEFEHL + WIEDERGABE
             </button>
             <button id="dailyAudibleCopy">DIAGNOSE KOPIEREN</button>
             <button id="dailyAudibleClose" class="danger">← SCHLIESSEN</button>
@@ -1662,12 +1668,16 @@
           setTimeout(() => {
             document.removeEventListener("visibilitychange", observeDeparture);
             if (didHide || document.visibilityState !== "visible") return;
-            const message =
-              target +
-              " wurde nicht geöffnet. In Web-Kiosk „Unbekannte externe URL-Schemata blockieren“ ausschalten und Audible im unterstützenden Zugriff erlauben.";
-            log(message);
+            const requiredApp =
+                scheme === "shortcuts" ? "Kurzbefehle" : "Audible",
+              message =
+                target +
+                " wurde nicht geöffnet. In Web-Kiosk „Unbekannte externe URL-Schemata blockieren“ ausschalten und " +
+                requiredApp +
+                " im unterstützenden Zugriff erlauben.";
             if (statusId) setStatus(statusId, message, "error");
-          }, 2200);
+            else log(message);
+          }, 18000);
         }
         function handleReturn() {
           let stored = null;
@@ -1697,7 +1707,9 @@
               " Sekunden erkannt.",
             "success",
           );
-          const audibleReturn = stored.target.startsWith("Audible");
+          const audibleReturn =
+            stored.target.startsWith("Audible") ||
+            stored.target.startsWith("Hörbuch");
           setDailyMode(audibleReturn ? "audible" : "home");
           setStatus("dailyStatus", "Zurück bei Sehen.", "success");
           if (audibleReturn)
@@ -3107,6 +3119,18 @@
           openExternal(
             "audible://",
             "Audible-App · Variante 3",
+            "dailyAudibleDiagnostics",
+          );
+        };
+        $("dailyAudibleShortcut").onclick = () => {
+          const name = "Sehen – Hörbuch starten";
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Variante 4: Kurzbefehl „" + name + "“ wird gestartet …",
+          );
+          openExternal(
+            "shortcuts://run-shortcut?name=" + encodeURIComponent(name),
+            "Hörbuch-Kurzbefehl · Variante 4",
             "dailyAudibleDiagnostics",
           );
         };
