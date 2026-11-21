@@ -332,6 +332,27 @@
         border-color: #784200;
         color: #fff;
       }
+      .quota-summary {
+        grid-column: 1/-1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 12px;
+        border: 3px solid #315b82;
+        border-radius: 14px;
+        background: #eef6ff;
+        color: #10243a;
+        font-weight: 850;
+      }
+      .quota-summary span {
+        display: block;
+        line-height: 1.35;
+      }
+      .quota-summary .quota-note {
+        grid-column: 1/-1;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
       .daily-output {
         min-height: 0;
         font-size: clamp(1.7rem, 6vw, 3rem);
@@ -339,6 +360,52 @@
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
+      }
+      .daily-output.structured-result {
+        white-space: normal;
+      }
+      .structured-result p,
+      .structured-result h2,
+      .structured-result h3 {
+        margin: 0 0 1em;
+      }
+      .structured-result h2 {
+        font-size: 1.3em;
+        line-height: 1.15;
+      }
+      .document-figure,
+      .document-aside {
+        margin: 1.2em 0;
+        padding: 14px;
+        border: 4px solid #315b82;
+        border-radius: 16px;
+        background: #eef6ff;
+      }
+      .document-figure img {
+        display: block;
+        width: 100%;
+        max-height: 48vh;
+        object-fit: contain;
+        border-radius: 10px;
+        background: #fff;
+      }
+      .document-figure figcaption {
+        margin-top: 10px;
+        font-size: 0.82em;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+      .document-aside h3,
+      .figure-information h3 {
+        margin-bottom: 0.45em;
+        color: #17456c;
+        font-size: 0.9em;
+      }
+      .figure-information {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 3px solid #91a7bd;
+        font-size: 0.9em;
       }
       .daily-video {
         max-height: 25vh;
@@ -911,6 +978,13 @@
           ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
           ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
+          <div id="quotaSummary" class="quota-summary" role="status">
+            <span id="documentQuota">Dokumentanalyse wird geladen …</span>
+            <span id="speechQuota">Sprachausgabe wird geladen …</span>
+            <span id="quotaNote" class="quota-note">
+              Lokaler Zähler dieser App; Azure-Portal ist verbindlich.
+            </span>
+          </div>
         </div>
         <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main camera-stage">
@@ -1084,7 +1158,8 @@
       <nav aria-label="Machbarkeitstests">
         <a href="#camera">Kamera</a><a href="#seeingai">Seeing AI</a
         ><a href="#shortcuts">Kurzbefehle</a><a href="#audible">Audible</a
-        ><a href="#ocr">Text lesen</a><a href="#results">Ergebnisse</a>
+        ><a href="#ocr">Text lesen</a><a href="#speechTest">Stimmen</a
+        ><a href="#results">Ergebnisse</a>
       </nav>
       <section class="panel" id="camera">
         <div class="step">
@@ -1303,6 +1378,43 @@
           ><button data-result="open">? Offen</button>
         </div>
       </section>
+      <section class="panel" id="speechTest">
+        <h2>Azure-Stimmen vergleichen</h2>
+        <p>
+          Die Zugangsdaten bleiben nur auf diesem iPad. Ohne gespeicherten
+          Speech-Schlüssel verwendet Sehen weiterhin die iPad-Stimme.
+        </p>
+        <label for="speechRegion">Azure-Speech-Region</label
+        ><input
+          id="speechRegion"
+          value="switzerlandnorth"
+          autocomplete="off"
+          autocapitalize="off"
+        />
+        <label for="speechKey">Azure-Speech-Schlüssel</label
+        ><input
+          id="speechKey"
+          type="password"
+          placeholder="Speech-Schlüssel einmalig einfügen"
+          autocomplete="off"
+        />
+        <div class="actions">
+          <button id="saveSpeech" class="primary">Speech speichern</button
+          ><button id="forgetSpeech" class="danger">Speech entfernen</button>
+        </div>
+        <p id="speechStatus" class="status" role="status">
+          Azure Speech ist noch nicht eingerichtet.
+        </p>
+        <div class="actions">
+          <button class="speech-voice" data-voice="de-CH-LeniNeural">
+            Leni · Schweiz</button
+          ><button class="speech-voice" data-voice="de-CH-JanNeural">
+            Jan · Schweiz</button
+          ><button class="speech-voice" data-voice="de-DE-KatjaNeural">
+            Katja · Deutschland</button
+          ><button id="speechTestStop">Stimme stoppen</button>
+        </div>
+      </section>
       <section class="panel" id="results">
         <h2>Testergebnisse</h2>
         <div id="summary" class="grid"></div>
@@ -1330,6 +1442,10 @@
           cameraKey = "sehen-camera-v2",
           resultKey = "sehen-spikes-v1",
           notesKey = "sehen-spike-notes-v1",
+          usageKey = "sehen-azure-usage-v1",
+          speechKeyStorage = "sehen-azure-speech-key",
+          speechRegionStorage = "sehen-azure-speech-region",
+          speechVoiceStorage = "sehen-azure-speech-voice",
           testImageUrl =
             "https://chinbe73.github.io/sehen-app/testseite.jpg",
           defaultAudible =
@@ -1367,7 +1483,9 @@
           scanCaptures = [],
           scanIndex = 0,
           scanRecognizing = false,
-          speechGeneration = 0;
+          speechGeneration = 0,
+          cloudAudio = null,
+          cloudAudioUrl = "";
         const readJSON = (key, fallback) => {
             try {
               return (
@@ -1379,6 +1497,67 @@
           },
           savedCamera = () => readJSON(cameraKey, null),
           results = () => readJSON(resultKey, {});
+        function currentMonth() {
+          const now = new Date();
+          return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+        }
+        function azureUsage() {
+          const saved = readJSON(usageKey, {}),
+            month = currentMonth();
+          if (saved.month === month)
+            return {
+              month,
+              pages: Number(saved.pages) || 0,
+              speechCharacters: Number(saved.speechCharacters) || 0,
+              startedAt: saved.startedAt || new Date().toISOString(),
+            };
+          const fresh = {
+            month,
+            pages: 0,
+            speechCharacters: 0,
+            startedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(usageKey, JSON.stringify(fresh));
+          return fresh;
+        }
+        function addAzureUsage(field, amount) {
+          const usage = azureUsage();
+          usage[field] = Math.max(0, (Number(usage[field]) || 0) + amount);
+          localStorage.setItem(usageKey, JSON.stringify(usage));
+          renderAzureUsage();
+        }
+        function renderAzureUsage() {
+          const usage = azureUsage(),
+            pageLimit = 500,
+            speechLimit = 500000,
+            pageRemaining = Math.max(0, pageLimit - usage.pages),
+            speechRemaining = Math.max(
+              0,
+              speechLimit - usage.speechCharacters,
+            );
+          $("documentQuota").textContent =
+            "Dokumentanalyse in Sehen: noch " +
+            pageRemaining.toLocaleString("de-CH") +
+            " von " +
+            pageLimit.toLocaleString("de-CH") +
+            " Seiten";
+          $("speechQuota").textContent =
+            speechSettings().key
+              ? "Azure-Sprache in Sehen: noch " +
+                speechRemaining.toLocaleString("de-CH") +
+                " von " +
+                speechLimit.toLocaleString("de-CH") +
+                " Zeichen"
+              : "Azure-Sprache noch nicht eingerichtet · F0: " +
+                speechLimit.toLocaleString("de-CH") +
+                " Zeichen/Monat";
+          $("quotaNote").textContent =
+            "Lokaler Zähler seit " +
+            new Date(usage.startedAt).toLocaleDateString("de-CH") +
+            "; das Azure-Portal bleibt verbindlich.";
+          $("quotaSummary").title =
+            "Lokaler Monatszähler dieser App ab Version 12. Die offiziellen Werte stehen im Azure-Portal.";
+        }
         const log = (message) => {
           events.push(
             "[" + new Date().toLocaleTimeString("de-CH") + "] " + message,
@@ -2169,29 +2348,88 @@
           return key;
         }
         function readableAzureParagraphs(result) {
-          const pages = new Map(
+          const rawParagraphs = result.paragraphs || [],
+            pages = new Map(
               (result.pages || []).map((page) => [page.pageNumber, page]),
             ),
             figureParagraphs = new Set(),
-            figureBoxes = [];
-          for (const figure of result.figures || []) {
-            for (const element of figure.elements || []) {
-              const match = element.match(/\/paragraphs\/(\d+)/);
-              if (match) figureParagraphs.add(Number(match[1]));
-            }
-            for (const region of figure.boundingRegions || []) {
-              const polygon = region.polygon || [];
-              if (polygon.length < 8) continue;
+            figureBoxes = [],
+            figures = [];
+          const regionBox = (region) => {
+              const polygon = region?.polygon || [];
+              if (polygon.length < 8) return null;
               const xs = polygon.filter((_, index) => index % 2 === 0),
                 ys = polygon.filter((_, index) => index % 2 === 1);
-              figureBoxes.push({
+              return {
                 pageNumber: region.pageNumber,
                 x0: Math.min(...xs),
                 x1: Math.max(...xs),
                 y0: Math.min(...ys),
                 y1: Math.max(...ys),
-              });
+              };
+            },
+            comparable = (text) =>
+              (text || "")
+                .toLocaleLowerCase("de")
+                .replace(/[^\p{L}\p{N}]+/gu, "")
+                .trim(),
+            cleanText = (text) =>
+              (text || "")
+                .trim()
+                .replace(/[ \t]+/g, " ")
+                .replace(/\n[ \t]+/g, "\n");
+          for (const [figureIndex, figure] of (result.figures || []).entries()) {
+            const linked = [];
+            for (const element of figure.elements || []) {
+              const match = element.match(/\/paragraphs\/(\d+)/);
+              if (!match) continue;
+              const index = Number(match[1]);
+              figureParagraphs.add(index);
+              linked.push(index);
             }
+            const boxes = (figure.boundingRegions || [])
+              .map(regionBox)
+              .filter(Boolean);
+            figureBoxes.push(...boxes);
+            const caption = cleanText(figure.caption?.content),
+              captionComparable = comparable(caption),
+              infoParts = linked
+                .map((index) => rawParagraphs[index])
+                .filter(Boolean)
+                .filter(
+                  (paragraph) =>
+                    !["pageHeader", "pageFooter", "pageNumber", "footnote"].includes(
+                      paragraph.role,
+                    ),
+                )
+                .map((paragraph) => cleanText(paragraph.content))
+                .filter(Boolean)
+                .filter((text) => comparable(text) !== captionComparable),
+              info = [...new Set(infoParts)].join("\n\n"),
+              authorInfo =
+                info.length < 900 &&
+                /\bautor(?:in)?\b|\bschriftsteller(?:in)?\b|\blehrte\b[^.]{0,120}\b(?:universität|fakultät)\b/i.test(
+                  info,
+                ),
+              linkedOffsets = linked
+                .map(
+                  (index) =>
+                    rawParagraphs[index]?.spans?.[0]?.offset ??
+                    Number.MAX_SAFE_INTEGER,
+                )
+                .filter(Number.isFinite),
+              ownOffset =
+                figure.spans?.[0]?.offset ?? Number.MAX_SAFE_INTEGER;
+            figures.push({
+              kind: "figure",
+              id: figure.id || "figure-" + figureIndex,
+              offset: Math.min(ownOffset, ...linkedOffsets),
+              box: boxes[0] || null,
+              page: boxes[0] ? pages.get(boxes[0].pageNumber) || null : null,
+              caption,
+              info,
+              label: authorInfo ? "Zum Autor" : "Weitere Informationen",
+            });
           }
           const centerOf = (paragraph) => {
               const region = paragraph.boundingRegions?.[0],
@@ -2245,15 +2483,12 @@
             signatureFound = false,
             articleLength = 0,
             used = 0;
-          const roleCounts = {};
-          const paragraphs = [];
-          for (const [index, paragraph] of (result.paragraphs || []).entries()) {
+          const roleCounts = {},
+            paragraphs = [];
+          for (const [index, paragraph] of rawParagraphs.entries()) {
             const role = paragraph.role || "ohne Rolle";
             roleCounts[role] = (roleCounts[role] || 0) + 1;
-            let text = (paragraph.content || "")
-              .trim()
-              .replace(/[ \t]+/g, " ")
-              .replace(/\n[ \t]+/g, "\n");
+            const text = cleanText(paragraph.content);
             if (!text) continue;
             const visible = text.replace(/\s/g, ""),
               letters = (visible.match(/\p{L}/gu) || []).length,
@@ -2279,31 +2514,84 @@
             paragraphs.push({
               text,
               offset: paragraph.spans?.[0]?.offset ?? Number.MAX_SAFE_INTEGER,
+              role: paragraph.role || "paragraph",
               signature,
             });
             articleLength += text.length;
           }
           paragraphs.sort((a, b) => a.offset - b.offset);
-          let source = "",
-            previous = "";
+          const articleBlocks = [];
+          let titleSeen = false,
+            cutoffOffset = Number.MAX_SAFE_INTEGER,
+            joinedLength = 0;
           for (const paragraph of paragraphs) {
-            const text = paragraph.text;
-            if (!source) source = text;
-            else if (/[-¬]$/.test(previous) && /^\p{Ll}/u.test(text))
-              source = source.slice(0, -1) + text;
-            else if (
-              !/[.!?…:;»”)]$/.test(previous) &&
-              /^\p{Ll}/u.test(text)
-            )
-              source += " " + text;
-            else source += "\n\n" + text;
-            previous = text;
+            if (paragraph.role === "title") {
+              if (titleSeen && joinedLength > 500) {
+                cutoffOffset = paragraph.offset;
+                break;
+              }
+              titleSeen = true;
+            }
+            const previous = articleBlocks.at(-1),
+              joinsPrevious =
+                previous &&
+                previous.kind === "paragraph" &&
+                paragraph.role !== "title" &&
+                paragraph.role !== "sectionHeading" &&
+                (/[-¬]$/.test(previous.text) ||
+                  (!/[.!?…:;»”)]$/.test(previous.text) &&
+                    /^\p{Ll}/u.test(paragraph.text)));
+            if (joinsPrevious) {
+              if (/[-¬]$/.test(previous.text))
+                previous.text = previous.text.slice(0, -1) + paragraph.text;
+              else previous.text += " " + paragraph.text;
+              previous.endOffset = paragraph.offset;
+              previous.signature ||= paragraph.signature;
+            } else {
+              articleBlocks.push({
+                kind:
+                  paragraph.role === "title" ||
+                  paragraph.role === "sectionHeading"
+                    ? "heading"
+                    : "paragraph",
+                text: paragraph.text,
+                offset: paragraph.offset,
+                endOffset: paragraph.offset,
+                signature: paragraph.signature,
+              });
+            }
+            joinedLength += paragraph.text.length;
             used++;
             if (paragraph.signature) {
               signatureFound = true;
+              cutoffOffset = paragraph.offset + 1;
               break;
             }
           }
+          const visibleFigures = figures.filter(
+              (figure) =>
+                figure.offset < cutoffOffset &&
+                (figure.box || figure.caption || figure.info),
+            ),
+            blocks = [...articleBlocks, ...visibleFigures].sort(
+              (a, b) =>
+                a.offset - b.offset ||
+                (a.kind === "figure" ? 1 : -1),
+            ),
+            textParts = blocks
+              .map((block) => {
+                if (block.kind !== "figure") return block.text;
+                return [
+                  block.caption
+                    ? "Bildunterschrift: " + block.caption
+                    : "",
+                  block.info ? block.label + ":\n" + block.info : "",
+                ]
+                  .filter(Boolean)
+                  .join("\n\n");
+              })
+              .filter(Boolean);
+          let source = textParts.join("\n\n");
           if (!source) source = (result.content || "").trim();
           return {
             text: source
@@ -2312,6 +2600,7 @@
               .replace(/\n[ \t]+/g, "\n")
               .replace(/\n{3,}/g, "\n\n")
               .trim(),
+            blocks,
             excluded,
             signatureFound,
             used,
@@ -2419,8 +2708,10 @@
                     "; Rollen: " +
                     readable.roles;
                 log(diagnostics);
+                addAzureUsage("pages", analyzed.pages?.length || 1);
                 return {
                   text: readable.text,
+                  blocks: readable.blocks,
                   columns: 0,
                   paragraphs: analyzed.paragraphs?.length || 0,
                   diagnostics,
@@ -2440,6 +2731,136 @@
         function stopSpeech() {
           speechGeneration++;
           speechSynthesis?.cancel();
+          if (cloudAudio) {
+            cloudAudio.pause();
+            cloudAudio.src = "";
+            cloudAudio = null;
+          }
+          if (cloudAudioUrl) {
+            URL.revokeObjectURL(cloudAudioUrl);
+            cloudAudioUrl = "";
+          }
+        }
+        const xmlEscape = (text) =>
+          text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+        function speechChunks(text, maximum = 2700) {
+          const paragraphs = text
+              .split(/\n{2,}/)
+              .map((part) => part.trim())
+              .filter(Boolean),
+            chunks = [];
+          let current = "";
+          for (const paragraph of paragraphs) {
+            const parts =
+              paragraph.length <= maximum
+                ? [paragraph]
+                : paragraph.match(new RegExp(".{1," + maximum + "}(?:\\s|$)", "gs")) || [paragraph];
+            for (const rawPart of parts) {
+              const part = rawPart.trim();
+              if (!part) continue;
+              if (current && current.length + part.length + 2 > maximum) {
+                chunks.push(current);
+                current = "";
+              }
+              current += (current ? "\n\n" : "") + part;
+            }
+          }
+          if (current) chunks.push(current);
+          return chunks;
+        }
+        function speechSettings() {
+          return {
+            key: localStorage.getItem(speechKeyStorage) || "",
+            region:
+              localStorage.getItem(speechRegionStorage) ||
+              "switzerlandnorth",
+            voice:
+              localStorage.getItem(speechVoiceStorage) || "de-CH-LeniNeural",
+          };
+        }
+        async function playAudioBlob(blob, generation) {
+          if (generation !== speechGeneration) return;
+          if (cloudAudioUrl) URL.revokeObjectURL(cloudAudioUrl);
+          cloudAudioUrl = URL.createObjectURL(blob);
+          cloudAudio = new Audio(cloudAudioUrl);
+          await cloudAudio.play();
+          await new Promise((resolve, reject) => {
+            cloudAudio.onended = resolve;
+            cloudAudio.onpause = () => {
+              if (generation !== speechGeneration) resolve();
+            };
+            cloudAudio.onerror = () =>
+              reject(new Error("Die Azure-Audiodatei konnte nicht abgespielt werden."));
+          });
+        }
+        async function speakAzure(text, voice, statusId = "dailyStatus") {
+          const settings = speechSettings();
+          if (!settings.key)
+            throw new Error("Azure Speech ist noch nicht eingerichtet.");
+          stopSpeech();
+          const generation = speechGeneration,
+            selectedVoice = voice || settings.voice,
+            chunks = speechChunks(text);
+          localStorage.setItem(speechVoiceStorage, selectedVoice);
+          for (let index = 0; index < chunks.length; index++) {
+            if (generation !== speechGeneration) return false;
+            const chunk = chunks[index],
+              paragraphs = chunk
+                .split(/\n{2,}/)
+                .map(
+                  (paragraph) =>
+                    "<p><s>" + xmlEscape(paragraph) + "</s></p>",
+                )
+                .join('<break time="650ms"/>'),
+              ssml =
+                '<speak version="1.0" xml:lang="de-CH"><voice name="' +
+                selectedVoice +
+                '">' +
+                paragraphs +
+                "</voice></speak>",
+              response = await fetch(
+                "https://" +
+                  settings.region +
+                  ".tts.speech.microsoft.com/cognitiveservices/v1",
+                {
+                  method: "POST",
+                  headers: {
+                    "Ocp-Apim-Subscription-Key": settings.key,
+                    "Content-Type": "application/ssml+xml",
+                    "X-Microsoft-OutputFormat":
+                      "audio-24khz-48kbitrate-mono-mp3",
+                  },
+                  body: ssml,
+                  cache: "no-store",
+                },
+              );
+            if (!response.ok) {
+              const detail = (await response.text()).trim();
+              throw new Error(
+                "Azure Speech meldet " +
+                  response.status +
+                  (detail ? ": " + detail.slice(0, 180) : "."),
+              );
+            }
+            const audio = await response.blob();
+            addAzureUsage("speechCharacters", chunk.length);
+            setStatus(
+              statusId,
+              "Azure-Stimme liest Abschnitt " +
+                (index + 1) +
+                " von " +
+                chunks.length +
+                ".",
+              "success",
+            );
+            await playAudioBlob(audio, generation);
+          }
+          return true;
         }
         function speakStructured(text) {
           if (!("speechSynthesis" in window) || !text) return false;
@@ -2463,6 +2884,92 @@
           next();
           return true;
         }
+        function figureImageFromCanvas(source, block) {
+          if (!(source instanceof HTMLCanvasElement) || !block.box || !block.page)
+            return "";
+          const pageWidth = Number(block.page.width) || 0,
+            pageHeight = Number(block.page.height) || 0;
+          if (!pageWidth || !pageHeight) return "";
+          const marginX = Math.max(4, (block.box.x1 - block.box.x0) * 0.025),
+            marginY = Math.max(4, (block.box.y1 - block.box.y0) * 0.025),
+            x0 = Math.max(0, block.box.x0 - marginX),
+            y0 = Math.max(0, block.box.y0 - marginY),
+            x1 = Math.min(pageWidth, block.box.x1 + marginX),
+            y1 = Math.min(pageHeight, block.box.y1 + marginY),
+            sx = (x0 / pageWidth) * source.width,
+            sy = (y0 / pageHeight) * source.height,
+            sw = ((x1 - x0) / pageWidth) * source.width,
+            sh = ((y1 - y0) / pageHeight) * source.height;
+          if (sw < 20 || sh < 20) return "";
+          const scale = Math.min(1, 1400 / Math.max(sw, sh)),
+            crop = document.createElement("canvas");
+          crop.width = Math.max(1, Math.round(sw * scale));
+          crop.height = Math.max(1, Math.round(sh * scale));
+          crop
+            .getContext("2d", { alpha: false })
+            .drawImage(source, sx, sy, sw, sh, 0, 0, crop.width, crop.height);
+          return crop.toDataURL("image/jpeg", 0.86);
+        }
+        function renderStructuredResult(layout, source) {
+          const output = $("dailyOutput"),
+            blocks = layout.blocks || [];
+          output.replaceChildren();
+          output.classList.toggle("structured-result", Boolean(blocks.length));
+          if (!blocks.length) {
+            output.textContent = layout.text || "Kein Text erkannt.";
+            return;
+          }
+          for (const block of blocks) {
+            if (block.kind === "heading") {
+              const heading = document.createElement("h2");
+              heading.textContent = block.text;
+              output.append(heading);
+              continue;
+            }
+            if (block.kind === "paragraph") {
+              const paragraph = document.createElement("p");
+              paragraph.textContent = block.text;
+              output.append(paragraph);
+              continue;
+            }
+            const imageUrl = figureImageFromCanvas(source, block);
+            if (imageUrl) {
+              const figure = document.createElement("figure"),
+                image = document.createElement("img");
+              figure.className = "document-figure";
+              image.src = imageUrl;
+              image.alt = block.caption || "Bild aus dem Dokument";
+              figure.append(image);
+              if (block.caption) {
+                const caption = document.createElement("figcaption");
+                caption.textContent = block.caption;
+                figure.append(caption);
+              }
+              if (block.info) {
+                const information = document.createElement("div"),
+                  label = document.createElement("h3"),
+                  text = document.createElement("p");
+                information.className = "figure-information";
+                label.textContent = block.label;
+                text.textContent = block.info;
+                information.append(label, text);
+                figure.append(information);
+              }
+              output.append(figure);
+            } else if (block.info || block.caption) {
+              const aside = document.createElement("aside"),
+                label = document.createElement("h3"),
+                text = document.createElement("p");
+              aside.className = "document-aside";
+              label.textContent = block.info
+                ? block.label
+                : "Bildunterschrift";
+              text.textContent = block.info || block.caption;
+              aside.append(label, text);
+              output.append(aside);
+            }
+          }
+        }
         async function recognize(autoSpeak = false) {
           let text = "";
           try {
@@ -2478,7 +2985,7 @@
               );
             text = layout.text;
             $("ocrOutput").textContent = text || "Kein Text erkannt.";
-            $("dailyOutput").textContent = text || "Kein Text erkannt.";
+            renderStructuredResult(layout, canvas);
             $("dailyStructure").textContent =
               layout.diagnostics || "Keine Strukturdaten verfügbar.";
             $("dailyCopyDiagnostics").dataset.diagnostics =
@@ -2523,8 +3030,32 @@
           }
           return text;
         }
-        function speak() {
+        async function speak() {
           const text = $("ocrOutput").textContent;
+          if (speechSettings().key) {
+            try {
+              setStatus(
+                "dailyStatus",
+                "Azure-Stimme wird vorbereitet …",
+              );
+              setStatus("ocrStatus", "Azure-Stimme wird vorbereitet …");
+              await speakAzure(text, "", "dailyStatus");
+              setStatus(
+                "ocrStatus",
+                "Text wurde mit der Azure-Stimme vorgelesen.",
+                "success",
+              );
+              return;
+            } catch (error) {
+              log("Azure-Sprachausgabe fehlgeschlagen: " + error.message);
+              setStatus(
+                "dailyStatus",
+                "Azure-Stimme nicht verfügbar. Die iPad-Stimme wird verwendet. " +
+                  error.message,
+                "warning",
+              );
+            }
+          }
           if (!speakStructured(text)) {
             setStatus(
               "ocrStatus",
@@ -3238,11 +3769,72 @@
         $("dailyScan").onclick = startScan;
         $("dailyMagnifier").onclick = startMagnifier;
         $("dailyAgain").onclick = speak;
+        $("saveSpeech").onclick = () => {
+          const key = $("speechKey").value.trim(),
+            region = $("speechRegion").value.trim().toLowerCase();
+          if (!key || !/^[a-z0-9-]+$/.test(region))
+            return setStatus(
+              "speechStatus",
+              "Bitte Speech-Schlüssel und Azure-Region vollständig eingeben.",
+              "warning",
+            );
+          localStorage.setItem(speechKeyStorage, key);
+          localStorage.setItem(speechRegionStorage, region);
+          $("speechKey").value = "";
+          renderAzureUsage();
+          setStatus(
+            "speechStatus",
+            "Azure Speech ist gespeichert. Bitte jetzt eine Stimme testen.",
+            "success",
+          );
+        };
+        $("forgetSpeech").onclick = () => {
+          stopSpeech();
+          localStorage.removeItem(speechKeyStorage);
+          localStorage.removeItem(speechRegionStorage);
+          localStorage.removeItem(speechVoiceStorage);
+          $("speechKey").value = "";
+          renderAzureUsage();
+          setStatus(
+            "speechStatus",
+            "Azure Speech wurde von diesem iPad entfernt.",
+            "success",
+          );
+        };
+        document.querySelectorAll(".speech-voice").forEach((button) => {
+          button.onclick = async () => {
+            const voice = button.dataset.voice,
+              sample =
+                "Guten Tag. Dies ist eine Hörprobe. Der Text wird ruhig und mit deutlichen Pausen zwischen den Absätzen vorgelesen.\n\nWelche Stimme ist am angenehmsten und am besten verständlich?";
+            try {
+              setStatus(
+                "speechStatus",
+                "Die Stimme " + voice + " wird vorbereitet …",
+              );
+              await speakAzure(sample, voice, "speechStatus");
+              setStatus(
+                "speechStatus",
+                "Hörprobe mit " + voice + " beendet.",
+                "success",
+              );
+            } catch (error) {
+              setStatus(
+                "speechStatus",
+                "Hörprobe fehlgeschlagen: " + error.message,
+                "error",
+              );
+            }
+          };
+        });
+        $("speechTestStop").onclick = () => {
+          stopSpeech();
+          setStatus("speechStatus", "Hörprobe gestoppt.", "success");
+        };
         $("dailyCopyDiagnostics").onclick = () => {
           const diagnostics =
               $("dailyCopyDiagnostics").dataset.diagnostics ||
               $("dailyStructure").textContent,
-            recognizedText = $("dailyOutput").textContent,
+            recognizedText = $("ocrOutput").textContent,
             copyText = diagnostics + "\n\nERKANNTER TEXT:\n" + recognizedText;
           navigator.clipboard
             .writeText(copyText)
@@ -3438,11 +4030,20 @@
           $("shortcutName").value;
         $("audibleId").value =
           localStorage.getItem("sehen-audible-id") || defaultAudible;
+        $("speechRegion").value = speechSettings().region;
+        if (speechSettings().key)
+          setStatus(
+            "speechStatus",
+            "Azure Speech ist eingerichtet. Gespeicherte Stimme: " +
+              speechSettings().voice,
+            "success",
+          );
         if (new URLSearchParams(location.search).get("diagnose") === "1") {
           document.body.classList.add("diagnosis-open");
           $("lab").classList.remove("hidden");
           log("Diagnosemodus aktiviert.");
         }
+        renderAzureUsage();
         showSaved();
         renderResults();
         log(
