@@ -910,7 +910,7 @@
           <button id="dailyRead" class="read">📖 SCHNELL LESEN</button
           ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
-          ><button id="dailyBook" class="book">🎧 HÖRBUCH IN AUDIBLE</button>
+          ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
         </div>
         <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main camera-stage">
@@ -958,13 +958,10 @@
         </div>
         <div id="dailyAudibleWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main audible-test-panel">
-            <h2>Hörbuch öffnen – Testvarianten</h2>
+            <h2>Wie soll Audible geöffnet werden?</h2>
             <p>
-              Diese Versuche öffnen nur die Audible-App. Es gibt keinen
-              automatischen Wechsel zur Audible-Webseite.
-            </p>
-            <p class="notice">
-              Variante 4 benötigt den Kurzbefehl „Sehen - Hörbuch starten“.
+              Empfohlen: Den Titel öffnen und danach in Audible einmal auf
+              Wiedergabe tippen.
             </p>
             <p id="dailyAudibleDiagnostics" class="status" role="status">
               Bitte eine Variante wählen.
@@ -972,16 +969,13 @@
           </div>
           <div class="workflow-actions">
             <button id="dailyAudibleBookLink" class="main-action">
-              1 · HÖRBUCH IN APP ÖFFNEN
+              1 · TITEL ÖFFNEN · EMPFOHLEN
             </button>
             <button id="dailyAudiblePlayer" class="secondary">
               2 · DIREKT ZUM PLAYER
             </button>
             <button id="dailyAudibleApp" class="secondary">
               3 · NUR AUDIBLE ÖFFNEN
-            </button>
-            <button id="dailyAudibleShortcut" class="test-action">
-              4 · KURZBEFEHL + WIEDERGABE
             </button>
             <button id="dailyAudibleCopy">DIAGNOSE KOPIEREN</button>
             <button id="dailyAudibleClose" class="danger">← SCHLIESSEN</button>
@@ -3281,23 +3275,30 @@
           return book;
         }
         $("dailyBook").onclick = () => {
-          const book = dailyAudibleBook();
-          if (!book) return;
+          if (!dailyAudibleBook()) return;
+          setDailyMode("audible");
           setStatus(
             "dailyStatus",
-            "Das Hörbuch wird in Audible geöffnet. Dort einmal auf Wiedergabe tippen.",
+            "Bitte wählen, wie Audible geöffnet werden soll.",
             "success",
           );
-          openExternal(book.app, "Audible-Hörbuch", "dailyStatus");
+          setStatus(
+            "dailyAudibleDiagnostics",
+            "Empfohlen: Titel öffnen und danach einmal auf Wiedergabe tippen.",
+          );
         };
         $("dailyAudibleBookLink").onclick = () => {
           const book = dailyAudibleBook();
           if (!book) return;
           setStatus(
             "dailyAudibleDiagnostics",
-            "Variante 1: Hörbuch-Link wird an die Audible-App übergeben …",
+            "Titel wird geöffnet. Danach in Audible einmal auf Wiedergabe tippen …",
           );
-          openExternal(book.app, "Audible-Hörbuch · Variante 1", "dailyAudibleDiagnostics");
+          openExternal(
+            book.app,
+            "Audible-Hörbuch · Variante 1",
+            "dailyAudibleDiagnostics",
+          );
         };
         $("dailyAudiblePlayer").onclick = () => {
           const book = dailyAudibleBook();
@@ -3320,18 +3321,6 @@
           openExternal(
             "audible://",
             "Audible-App · Variante 3",
-            "dailyAudibleDiagnostics",
-          );
-        };
-        $("dailyAudibleShortcut").onclick = () => {
-          const name = "Sehen - Hörbuch starten";
-          setStatus(
-            "dailyAudibleDiagnostics",
-            "Variante 4: Kurzbefehl „" + name + "“ wird gestartet …",
-          );
-          openExternal(
-            "shortcuts://run-shortcut?name=" + encodeURIComponent(name),
-            "Hörbuch-Kurzbefehl · Variante 4",
             "dailyAudibleDiagnostics",
           );
         };
