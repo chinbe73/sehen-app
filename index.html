@@ -2085,10 +2085,17 @@
             throw new Error(
               "Das Azure-Kontingent ist momentan ausgelastet. Bitte später nochmals versuchen.",
             );
-          if (response.status !== 202)
-            throw new Error(
-              "Azure konnte das Dokument nicht analysieren.",
-            );
+          if (response.status !== 202) {
+            let detail = {};
+            try {
+              detail = await response.json();
+            } catch {}
+            const reason =
+              detail.error?.message ||
+              detail.message ||
+              "Azure konnte das Dokument nicht analysieren.";
+            throw new Error("Azure-Fehler " + response.status + ": " + reason);
+          }
           const operationLocation =
             response.headers.get("operation-location") || "";
           if (!operationLocation)
