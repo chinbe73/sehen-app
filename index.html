@@ -2010,58 +2010,117 @@
               : Promise.reject(
                   new Error("Das Fotoformat wird nicht unterstützt."),
                 );
-        const recognitionEndpoint =
-            location.hostname === "chinbe73.github.io"
-              ? "https://gregarious-bienenstitch-e1a428.netlify.app/.netlify/functions/recognize-document"
-              : "/.netlify/functions/recognize-document",
-          deviceTokenKey = "sehen-device-token";
-        function deviceToken() {
-          let token = localStorage.getItem(deviceTokenKey) || "";
-          if (token) return token;
-          token = (
+        const azureEndpoint =
+            "https://sehen-dokumente-20261116.cognitiveservices.azure.com",
+          azureKeyStorage = "sehen-azure-document-key";
+        const wait = (milliseconds) =>
+          new Promise((resolve) => setTimeout(resolve, milliseconds));
+        function azureKey() {
+          let key = localStorage.getItem(azureKeyStorage) || "";
+          if (key) return key;
+          key = (
             prompt(
-              "Gerätecode einmalig eingeben. Danach bleibt er auf diesem iPad gespeichert.",
+              "Azure-Schlüssel einmalig eingeben. Er bleibt nur auf diesem iPad gespeichert.",
             ) || ""
           ).trim();
-          if (!token)
+          if (!key)
             throw new Error(
-              "Der Gerätecode fehlt. Bitte eine Betreuungsperson fragen.",
+              "Der Azure-Schlüssel fehlt. Bitte eine Betreuungsperson fragen.",
             );
-          localStorage.setItem(deviceTokenKey, token);
-          return token;
+          localStorage.setItem(azureKeyStorage, key);
+          return key;
+        }
+        function readableAzureParagraphs(result) {
+          const paragraphs = (result.paragraphs || [])
+              .filter(
+                (paragraph) =>
+                  ![
+                    "pageHeader",
+                    "pageFooter",
+                    "pageNumber",
+                    "footnote",
+                  ].includes(paragraph.role),
+              )
+              .filter((paragraph) => (paragraph.content || "").trim())
+              .sort(
+                (a, b) =>
+                  (a.spans?.[0]?.offset ?? 0) -
+                  (b.spans?.[0]?.offset ?? 0),
+              ),
+            source = paragraphs.length
+              ? paragraphs
+                  .map((paragraph) => paragraph.content.trim())
+                  .join("\n\n")
+              : (result.content || "").trim();
+          return source
+            .replace(/([\p{L}])-\s+([\p{Ll}])/gu, "$1$2")
+            .replace(/[ \t]+/g, " ")
+            .replace(/\n[ \t]+/g, "\n")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
         }
         async function recognizeDocumentCloud(image, onStage = () => {}) {
-          onStage("Dokument wird mit der neuen Seitenerkennung analysiert …");
+          onStage("Dokument wird direkt mit Azure analysiert …");
           const blob = await imageBlob(image),
-            response = await fetch(recognitionEndpoint, {
+            key = azureKey(),
+            analyzeUrl =
+              azureEndpoint +
+              "/documentintelligence/documentModels/prebuilt-layout:analyze?api-version=2024-11-30&locale=de-DE",
+            response = await fetch(analyzeUrl, {
               method: "POST",
               headers: {
                 "Content-Type": blob.type || "image/jpeg",
-                "X-Sehen-Device": deviceToken(),
+                "Ocp-Apim-Subscription-Key": key,
               },
               body: blob,
               cache: "no-store",
             });
-          let result = {};
-          try {
-            result = await response.json();
-          } catch {}
-          if (response.status === 401) {
-            localStorage.removeItem(deviceTokenKey);
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem(azureKeyStorage);
             throw new Error(
-              "Der Gerätecode stimmt nicht. Bitte nochmals versuchen.",
+              "Der Azure-Schlüssel stimmt nicht. Bitte nochmals versuchen.",
             );
           }
-          if (!response.ok)
+          if (response.status === 429)
             throw new Error(
-              result.error ||
-                "Die Dokumenterkennung ist momentan nicht erreichbar.",
+              "Das Azure-Kontingent ist momentan ausgelastet. Bitte später nochmals versuchen.",
             );
-          return {
-            text: (result.text || "").trim(),
-            columns: 0,
-            paragraphs: result.paragraphs || 0,
-          };
+          if (response.status !== 202)
+            throw new Error(
+              "Azure konnte das Dokument nicht analysieren.",
+            );
+          const operationLocation =
+            response.headers.get("operation-location") || "";
+          if (!operationLocation)
+            throw new Error("Azure hat keinen Ergebnislink geliefert.");
+          try {
+            for (let attempt = 0; attempt < 32; attempt += 1) {
+              if (attempt) await wait(750);
+              const poll = await fetch(operationLocation, {
+                  headers: { "Ocp-Apim-Subscription-Key": key },
+                  cache: "no-store",
+                }),
+                result = await poll.json();
+              if (!poll.ok || result.status === "failed")
+                throw new Error("Die Dokumentanalyse ist fehlgeschlagen.");
+              if (result.status === "succeeded") {
+                const analyzed = result.analyzeResult || {};
+                return {
+                  text: readableAzureParagraphs(analyzed),
+                  columns: 0,
+                  paragraphs: analyzed.paragraphs?.length || 0,
+                };
+              }
+            }
+            throw new Error(
+              "Die Dokumentanalyse dauerte zu lange. Bitte nochmals versuchen.",
+            );
+          } finally {
+            fetch(operationLocation, {
+              method: "DELETE",
+              headers: { "Ocp-Apim-Subscription-Key": key },
+            }).catch(() => {});
+          }
         }
         function stopSpeech() {
           speechGeneration++;
