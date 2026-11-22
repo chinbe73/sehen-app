@@ -1041,7 +1041,7 @@
             <p id="localBookStatus" class="status" role="status">Noch kein Hörbuch importiert.</p>
           </div>
           <div class="workflow-actions">
-            <button id="localBookImport" class="main-action">HÖRBUCH IMPORTIEREN</button>
+            <button id="localBookImport" class="main-action">HÖRBUCH AUSWÄHLEN</button>
             <button id="localBookPlay" class="secondary" disabled>▶ ABSPIELEN / PAUSE</button>
             <button id="dailyAdminClose" class="danger">← SCHLIESSEN</button>
           </div>
@@ -3658,55 +3658,23 @@
           document.body.classList.toggle("read-open", !home);
         }
         async function loadLocalBook() {
-          try {
-            const root = await navigator.storage.getDirectory(),
-              handle = await root.getFileHandle("hoerbuch.m4b"),
-              file = await handle.getFile();
-            if (file.size < 1000000)
-              throw new Error("Der Import ist unvollständig (" + file.size + " Byte). Bitte erneut importieren.");
-            if (localBookUrl) URL.revokeObjectURL(localBookUrl);
-            localBookUrl = URL.createObjectURL(file);
-            $("localBookAudio").src = localBookUrl;
-            $("localBookPlay").disabled = false;
-            setStatus(
-              "localBookStatus",
-              "Bereit: " +
-                (localStorage.getItem(localBookNameStorage) || "Hörbuch") +
-                " · " +
-                (file.size / 1073741824).toFixed(2) +
-                " GB",
-              "success",
-            );
-            return true;
-          } catch (error) {
-            $("localBookPlay").disabled = true;
-            setStatus(
-              "localBookStatus",
-              error.message || "Noch kein vollständiges Hörbuch importiert.",
-              "error",
-            );
-            return false;
-          }
+          if (localBookUrl) return true;
+          $("localBookPlay").disabled = true;
+          setStatus("localBookStatus", "Bitte das Hörbuch auswählen.");
+          return false;
         }
         async function importLocalBook(file) {
           if (!file) return;
-          setStatus("localBookStatus", "Hörbuch wird lokal kopiert …");
-          try {
-            await navigator.storage.persist?.();
-            const root = await navigator.storage.getDirectory(),
-              handle = await root.getFileHandle("hoerbuch.m4b", { create: true }),
-              writable = await handle.createWritable();
-            await writable.write(file);
-            await writable.close();
-            localStorage.setItem(localBookNameStorage, file.name);
-            await loadLocalBook();
-          } catch (error) {
-            setStatus(
-              "localBookStatus",
-              "Import fehlgeschlagen: " + error.message,
-              "error",
-            );
-          }
+          if (localBookUrl) URL.revokeObjectURL(localBookUrl);
+          localBookUrl = URL.createObjectURL(file);
+          $("localBookAudio").src = localBookUrl;
+          $("localBookPlay").disabled = false;
+          localStorage.setItem(localBookNameStorage, file.name);
+          setStatus(
+            "localBookStatus",
+            "Bereit: " + file.name + " · " + (file.size / 1073741824).toFixed(2) + " GB",
+            "success",
+          );
         }
         async function startDailyCamera() {
           stopSpeech();
