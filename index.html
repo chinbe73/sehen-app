@@ -60,6 +60,19 @@
       .hidden {
         display: none !important;
       }
+      .screen-reader-status,
+      #dailyStatus,
+      #magnifierStatus {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
       .hero,
       .panel {
         border: 2px solid #c9d5e2;
@@ -503,13 +516,7 @@
         transition: transform 0.15s;
       }
       .magnifier-stage video.filter-bw {
-        filter: grayscale(1) contrast(1.75);
-      }
-      .magnifier-stage video.filter-invert {
-        filter: grayscale(1) invert(1) contrast(1.65);
-      }
-      .magnifier-stage video.filter-yellow {
-        filter: grayscale(1) sepia(1) saturate(7) contrast(1.65);
+        filter: grayscale(1) contrast(2.2);
       }
       .magnifier-controls {
         display: grid;
@@ -565,15 +572,8 @@
         border-radius: 0;
         box-shadow: none;
         display: grid;
-        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+        grid-template-rows: minmax(0, 1fr) auto auto;
         gap: 8px;
-      }
-      body.magnifier-open #magnifier h2 {
-        margin: 0;
-      }
-      body.magnifier-open #magnifierStatus {
-        margin: 0;
-        padding: 8px 12px;
       }
       body.magnifier-open .magnifier-stage {
         height: auto;
@@ -589,7 +589,7 @@
         min-height: 68px;
       }
       body.magnifier-open .magnifier-actions {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
       body.magnifier-open .magnifier-actions button {
@@ -904,7 +904,7 @@
         border: 0;
         border-radius: 0;
         box-shadow: none;
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
       }
       body.read-open #dailyStatus {
         margin: 0;
@@ -1036,7 +1036,7 @@
     </div>
     <main id="daily">
       <section class="panel">
-        <p id="dailyStatus" class="status" role="status" aria-live="assertive">
+        <p id="dailyStatus" class="status screen-reader-status" role="status" aria-live="assertive">
           Was möchtest du tun?
         </p>
         <div id="dailyHome" class="daily-actions">
@@ -1189,10 +1189,9 @@
     </main>
     <main id="magnifier" class="hidden">
       <section class="panel">
-        <h2>Lupe</h2>
         <p
           id="magnifierStatus"
-          class="status"
+          class="status screen-reader-status"
           role="status"
           aria-live="assertive"
         >
@@ -1214,8 +1213,7 @@
         </div>
         <div class="magnifier-actions">
           <button id="magnifierFreeze" class="primary">❄ BILD ANHALTEN</button
-          ><button id="magnifierFilter">◐ KONTRAST: FARBE</button
-          ><button id="magnifierCamera">↻ KAMERA WECHSELN</button
+          ><button id="magnifierFilter">◐ FARBE</button
           ><button id="magnifierClose" class="danger">← LUPE SCHLIESSEN</button>
         </div>
       </section>
@@ -1523,9 +1521,7 @@
           magnifierZoomLevels = [1, 1.5, 2, 3, 4, 6, 8],
           magnifierFilters = [
             ["FARBE", ""],
-            ["SCHWARZ-WEISS", "filter-bw"],
-            ["INVERTIERT", "filter-invert"],
-            ["GELB-SCHWARZ", "filter-yellow"],
+            ["S/W HOCHKONTRAST", "filter-bw"],
           ];
         const names = {
           camera: "Kamera bleibt gespeichert",
@@ -1546,7 +1542,7 @@
           magnifierFilterIndex = Math.max(
             0,
             Math.min(
-              3,
+              magnifierFilters.length - 1,
               Number(localStorage.getItem("sehen-magnifier-filter")) || 0,
             ),
           ),
@@ -1626,6 +1622,27 @@
             );
             return [];
           }
+        }
+        function preferredCamera() {
+          const score = (device) => {
+            const label = (device.label || "").toLowerCase();
+            if (!label) return 0;
+            if (
+              /ipevo|usb|external|extern|webcam|document|dokument|visualizer|uvc/.test(
+                label,
+              )
+            )
+              return 400;
+            if (/rück|rear|back|environment/.test(label)) return 300;
+            if (/front|vorder|facetime|user/.test(label)) return -100;
+            return 200;
+          };
+          return (
+            devices
+              .map((device) => ({ device, score: score(device) }))
+              .filter((entry) => entry.score > 0)
+              .sort((a, b) => b.score - a.score)[0]?.device || null
+          );
         }
         async function startCamera(
           deviceId,
@@ -1709,32 +1726,23 @@
           }
         }
         async function restoreCamera() {
-          const pref = savedCamera();
-          if (!pref) return startCamera();
-          log(
-            "Gespeicherte Kamera wird wiederhergestellt: " +
-              (pref.label || "unbenannt"),
-          );
+          await findCameras();
+          let preferred = preferredCamera();
           if (
-            pref.id &&
-            (await startCamera(pref.id, pref.facingMode || "environment", true))
-          )
+            preferred?.deviceId &&
+            (await startCamera(preferred.deviceId, "environment", true))
+          ) {
+            log("Bevorzugte Kamera gestartet: " + preferred.label);
             return true;
-          if (!(await startCamera(null, pref.facingMode || "environment")))
-            return false;
-          const currentId = stream?.getVideoTracks()[0]?.getSettings().deviceId,
-            matching = devices.find((d) => d.label && d.label === pref.label);
-          if (matching?.deviceId && matching.deviceId !== currentId) {
-            log("Kamera nach Freigabe über den gespeicherten Namen gefunden.");
-            return startCamera(
-              matching.deviceId,
-              pref.facingMode || "environment",
-            );
           }
-          if (!matching)
-            log(
-              "Gespeicherter Name nicht gefunden; passende Vorder-/Rückkamera bleibt aktiv.",
-            );
+          if (!(await startCamera(null, "environment"))) return false;
+          const currentId = stream?.getVideoTracks()[0]?.getSettings().deviceId;
+          preferred = preferredCamera();
+          if (preferred?.deviceId && preferred.deviceId !== currentId) {
+            log("Bevorzugte Kamera nach Freigabe gefunden: " + preferred.label);
+            return startCamera(preferred.deviceId, "environment", true);
+          }
+          log("Rückkamera bleibt aktiv.");
           return true;
         }
         function takePhoto() {
@@ -3772,7 +3780,7 @@
             if (filterClass) video.classList.remove(filterClass);
           });
           if (className) video.classList.add(className);
-          $("magnifierFilter").textContent = "◐ KONTRAST: " + name;
+          $("magnifierFilter").textContent = "◐ " + name;
           localStorage.setItem(
             "sehen-magnifier-filter",
             String(magnifierFilterIndex),
@@ -4395,7 +4403,6 @@
         $("magnifierPlus").onclick = () => updateMagnifierZoom(1);
         $("magnifierFreeze").onclick = toggleMagnifierFreeze;
         $("magnifierFilter").onclick = () => updateMagnifierFilter(1);
-        $("magnifierCamera").onclick = switchMagnifierCamera;
         $("magnifierClose").onclick = closeMagnifier;
         $("recognize").onclick = recognize;
         $("speak").onclick = speak;
