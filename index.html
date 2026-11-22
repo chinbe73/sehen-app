@@ -332,6 +332,12 @@
         border-color: #784200;
         color: #fff;
       }
+      .daily-actions .admin {
+        grid-column: 1 / -1;
+        min-height: 58px;
+        font-size: 1rem;
+        background: #435466;
+      }
       .daily-output {
         min-height: 0;
         font-size: clamp(1.7rem, 6vw, 3rem);
@@ -956,7 +962,8 @@
           <button id="dailyRead" class="read">📖 SCHNELL LESEN</button
           ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
-          ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button>
+          ><button id="dailyBook" class="book">🎧 HÖRBUCH ÖFFNEN</button
+          ><button id="dailyAdmin" class="admin">⚙ VERWALTUNG</button>
         </div>
         <div id="dailyCameraWorkspace" class="workflow daily-workflow hidden">
           <div class="workflow-main camera-stage">
@@ -1026,6 +1033,19 @@
             <button id="dailyAudibleCopy">DIAGNOSE KOPIEREN</button>
             <button id="dailyAudibleClose" class="danger">← SCHLIESSEN</button>
           </div>
+        </div>
+        <div id="dailyAdminWorkspace" class="workflow daily-workflow hidden">
+          <div class="workflow-main audible-test-panel">
+            <h2>Verwaltung</h2>
+            <input id="localBookFile" type="file" accept=".m4b,audio/mp4,audio/x-m4b" hidden />
+            <p id="localBookStatus" class="status" role="status">Noch kein Hörbuch importiert.</p>
+          </div>
+          <div class="workflow-actions">
+            <button id="localBookImport" class="main-action">HÖRBUCH IMPORTIEREN</button>
+            <button id="localBookPlay" class="secondary" disabled>▶ ABSPIELEN / PAUSE</button>
+            <button id="dailyAdminClose" class="danger">← SCHLIESSEN</button>
+          </div>
+          <audio id="localBookAudio" preload="metadata"></audio>
         </div>
       </section>
     </main>
@@ -1417,6 +1437,7 @@
           speechKeyStorage = "sehen-azure-speech-key",
           speechRegionStorage = "sehen-azure-speech-region",
           speechVoiceStorage = "sehen-azure-speech-voice",
+          localBookNameStorage = "sehen-local-book-name",
           testImageUrl =
             "https://chinbe73.github.io/sehen-app/testseite.jpg",
           defaultAudible =
@@ -1456,7 +1477,8 @@
           scanRecognizing = false,
           speechGeneration = 0,
           cloudAudio = null,
-          cloudAudioUrl = "";
+          cloudAudioUrl = "",
+          localBookUrl = "";
         const readJSON = (key, fallback) => {
             try {
               return (
@@ -3626,12 +3648,54 @@
           const home = mode === "home",
             camera = mode === "camera",
             result = mode === "result",
-            audible = mode === "audible";
+            audible = mode === "audible",
+            admin = mode === "admin";
           $("dailyHome").classList.toggle("hidden", !home);
           $("dailyCameraWorkspace").classList.toggle("hidden", !camera);
           $("dailyResultWorkspace").classList.toggle("hidden", !result);
           $("dailyAudibleWorkspace").classList.toggle("hidden", !audible);
+          $("dailyAdminWorkspace").classList.toggle("hidden", !admin);
           document.body.classList.toggle("read-open", !home);
+        }
+        async function loadLocalBook() {
+          try {
+            const root = await navigator.storage.getDirectory(),
+              handle = await root.getFileHandle("hoerbuch.m4b"),
+              file = await handle.getFile();
+            if (localBookUrl) URL.revokeObjectURL(localBookUrl);
+            localBookUrl = URL.createObjectURL(file);
+            $("localBookAudio").src = localBookUrl;
+            $("localBookPlay").disabled = false;
+            setStatus(
+              "localBookStatus",
+              "Bereit: " + (localStorage.getItem(localBookNameStorage) || "Hörbuch"),
+              "success",
+            );
+            return true;
+          } catch {
+            $("localBookPlay").disabled = true;
+            return false;
+          }
+        }
+        async function importLocalBook(file) {
+          if (!file) return;
+          setStatus("localBookStatus", "Hörbuch wird lokal kopiert …");
+          try {
+            await navigator.storage.persist?.();
+            const root = await navigator.storage.getDirectory(),
+              handle = await root.getFileHandle("hoerbuch.m4b", { create: true }),
+              writable = await handle.createWritable();
+            await writable.write(file);
+            await writable.close();
+            localStorage.setItem(localBookNameStorage, file.name);
+            await loadLocalBook();
+          } catch (error) {
+            setStatus(
+              "localBookStatus",
+              "Import fehlgeschlagen: " + error.message,
+              "error",
+            );
+          }
         }
         async function startDailyCamera() {
           stopSpeech();
@@ -3806,6 +3870,25 @@
             "dailyAudibleDiagnostics",
             "Empfohlen: Titel öffnen und danach einmal auf Wiedergabe tippen.",
           );
+        };
+        $("dailyAdmin").onclick = async () => {
+          setDailyMode("admin");
+          await loadLocalBook();
+        };
+        $("localBookImport").onclick = () => $("localBookFile").click();
+        $("localBookFile").onchange = () =>
+          importLocalBook($("localBookFile").files?.[0]);
+        $("localBookPlay").onclick = () => {
+          const audio = $("localBookAudio");
+          if (audio.paused) audio.play().catch((error) =>
+            setStatus("localBookStatus", "Abspielen fehlgeschlagen: " + error.message, "error"),
+          );
+          else audio.pause();
+        };
+        $("dailyAdminClose").onclick = () => {
+          $("localBookAudio").pause();
+          setDailyMode("home");
+          setStatus("dailyStatus", "Was möchtest du tun?");
         };
         $("dailyAudibleBookLink").onclick = () => {
           const book = dailyAudibleBook();
