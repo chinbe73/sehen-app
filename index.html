@@ -1378,8 +1378,8 @@
           Azure Speech ist noch nicht eingerichtet.
         </p>
         <div class="actions">
-          <button class="speech-voice" data-voice="de-CH-LeniNeural">
-            Leni · Schweiz</button
+          <button class="speech-voice" data-voice="de-DE-ConradNeural">
+            Conrad · Hochdeutsch</button
           ><button class="speech-voice" data-voice="de-CH-JanNeural">
             Jan · Schweiz</button
           ><button class="speech-voice" data-voice="de-DE-KatjaNeural">
@@ -2287,6 +2287,14 @@
               (text || "")
                 .trim()
                 .replace(/[ \t]+/g, " ")
+                .replace(/\n[ \t]+/g, "\n"),
+            repairOcrText = (text) =>
+              (text || "")
+                .replace(/([\p{L}]{2,})[-¬]\s+([\p{Ll}]{2,})/gu, "$1$2")
+                .replace(/\bGedanken(?=darüber|daran|dazu|davon)/giu, "Gedanken ")
+                .replace(/\b(nahe|fern)(?=oder|und|aber)/giu, "$1 ")
+                .replace(/([.!?…»”])(?=\p{Lu})/gu, "$1 ")
+                .replace(/[ \t]+/g, " ")
                 .replace(/\n[ \t]+/g, "\n");
           for (const [figureIndex, figure] of (result.figures || []).entries()) {
             const linked = [];
@@ -2302,25 +2310,6 @@
               .filter(Boolean);
             figureBoxes.push(...boxes);
             const caption = cleanText(figure.caption?.content),
-              captionComparable = comparable(caption),
-              infoParts = linked
-                .map((index) => rawParagraphs[index])
-                .filter(Boolean)
-                .filter(
-                  (paragraph) =>
-                    !["pageHeader", "pageFooter", "pageNumber", "footnote"].includes(
-                      paragraph.role,
-                    ),
-                )
-                .map((paragraph) => cleanText(paragraph.content))
-                .filter(Boolean)
-                .filter((text) => comparable(text) !== captionComparable),
-              info = [...new Set(infoParts)].join("\n\n"),
-              authorInfo =
-                info.length < 900 &&
-                /\bautor(?:in)?\b|\bschriftsteller(?:in)?\b|\blehrte\b[^.]{0,120}\b(?:universität|fakultät)\b/i.test(
-                  info,
-                ),
               linkedOffsets = linked
                 .map(
                   (index) =>
@@ -2337,8 +2326,6 @@
               box: boxes[0] || null,
               page: boxes[0] ? pages.get(boxes[0].pageNumber) || null : null,
               caption,
-              info,
-              label: authorInfo ? "Zum Autor" : "Weitere Informationen",
             });
           }
           const centerOf = (paragraph) => {
@@ -2422,8 +2409,12 @@
               continue;
             }
             paragraphs.push({
-              text,
+              text: repairOcrText(text),
               offset: paragraph.spans?.[0]?.offset ?? Number.MAX_SAFE_INTEGER,
+              endOffset: (paragraph.spans || []).reduce(
+                (end, span) => Math.max(end, span.offset + span.length),
+                paragraph.spans?.[0]?.offset ?? Number.MAX_SAFE_INTEGER,
+              ),
               role: paragraph.role || "paragraph",
               signature,
             });
@@ -2455,7 +2446,10 @@
               if (/[-¬]$/.test(previous.text))
                 previous.text = previous.text.slice(0, -1) + paragraph.text;
               else previous.text += " " + paragraph.text;
-              previous.endOffset = paragraph.offset;
+              previous.endOffset = Math.max(
+                previous.endOffset,
+                paragraph.endOffset,
+              );
               previous.signature ||= paragraph.signature;
             } else {
               articleBlocks.push({
@@ -2466,7 +2460,7 @@
                     : "paragraph",
                 text: paragraph.text,
                 offset: paragraph.offset,
-                endOffset: paragraph.offset,
+                endOffset: paragraph.endOffset,
                 signature: paragraph.signature,
               });
             }
@@ -2481,31 +2475,43 @@
           const visibleFigures = figures.filter(
               (figure) =>
                 figure.offset < cutoffOffset &&
-                (figure.box || figure.caption || figure.info),
-            ),
-            blocks = [...articleBlocks, ...visibleFigures].sort(
-              (a, b) =>
-                a.offset - b.offset ||
-                (a.kind === "figure" ? 1 : -1),
-            ),
-            textParts = blocks
+                (figure.box || figure.caption),
+            );
+          for (const figure of visibleFigures) {
+            let anchorIndex = articleBlocks.findIndex(
+              (block) => figure.offset <= block.endOffset,
+            );
+            if (anchorIndex < 0) anchorIndex = articleBlocks.length - 1;
+            if (
+              anchorIndex >= 0 &&
+              articleBlocks[anchorIndex].kind === "heading" &&
+              anchorIndex + 1 < articleBlocks.length
+            )
+              anchorIndex++;
+            figure.anchorIndex = anchorIndex;
+          }
+          const blocks = [];
+          for (const [index, block] of articleBlocks.entries()) {
+            blocks.push(block);
+            blocks.push(
+              ...visibleFigures
+                .filter((figure) => figure.anchorIndex === index)
+                .sort((a, b) => a.offset - b.offset),
+            );
+          }
+          if (!articleBlocks.length) blocks.push(...visibleFigures);
+          const textParts = blocks
               .map((block) => {
                 if (block.kind !== "figure") return block.text;
-                return [
-                  block.caption
-                    ? "Bildunterschrift: " + block.caption
-                    : "",
-                  block.info ? block.label + ":\n" + block.info : "",
-                ]
-                  .filter(Boolean)
-                  .join("\n\n");
+                return block.caption
+                  ? "Bildunterschrift: " + block.caption
+                  : "";
               })
               .filter(Boolean);
           let source = textParts.join("\n\n");
           if (!source) source = (result.content || "").trim();
           return {
-            text: source
-              .replace(/([\p{L}])-\s+([\p{Ll}])/gu, "$1$2")
+            text: repairOcrText(source)
               .replace(/[ \t]+/g, " ")
               .replace(/\n[ \t]+/g, "\n")
               .replace(/\n{3,}/g, "\n\n")
@@ -2683,13 +2689,19 @@
           return chunks;
         }
         function speechSettings() {
+          const storedVoice = localStorage.getItem(speechVoiceStorage) || "",
+            voice =
+              !storedVoice || storedVoice.startsWith("de-CH-")
+                ? "de-DE-ConradNeural"
+                : storedVoice;
+          if (voice !== storedVoice)
+            localStorage.setItem(speechVoiceStorage, voice);
           return {
             key: localStorage.getItem(speechKeyStorage) || "",
             region:
               localStorage.getItem(speechRegionStorage) ||
               "switzerlandnorth",
-            voice:
-              localStorage.getItem(speechVoiceStorage) || "de-CH-LeniNeural",
+            voice,
           };
         }
         async function playAudioBlob(blob, generation) {
@@ -2727,7 +2739,7 @@
                 )
                 .join('<break time="650ms"/>'),
               ssml =
-                '<speak version="1.0" xml:lang="de-CH"><voice name="' +
+                '<speak version="1.0" xml:lang="de-DE"><voice name="' +
                 selectedVoice +
                 '">' +
                 paragraphs +
@@ -2783,7 +2795,7 @@
             if (generation !== speechGeneration || index >= paragraphs.length)
               return;
             const utterance = new SpeechSynthesisUtterance(paragraphs[index++]);
-            utterance.lang = "de-CH";
+            utterance.lang = "de-DE";
             utterance.rate = 0.78;
             utterance.onend = () => setTimeout(next, 500);
             utterance.onerror = () => setTimeout(next, 250);
@@ -2816,7 +2828,29 @@
           crop
             .getContext("2d", { alpha: false })
             .drawImage(source, sx, sy, sw, sh, 0, 0, crop.width, crop.height);
-          return crop.toDataURL("image/jpeg", 0.86);
+          const angle = -Number(block.page.angle || 0),
+            normalizedAngle = ((angle % 360) + 360) % 360;
+          if (normalizedAngle < 1 || normalizedAngle > 359)
+            return crop.toDataURL("image/jpeg", 0.86);
+          const radians = (angle * Math.PI) / 180,
+            sine = Math.abs(Math.sin(radians)),
+            cosine = Math.abs(Math.cos(radians)),
+            rotated = document.createElement("canvas");
+          rotated.width = Math.max(
+            1,
+            Math.round(crop.width * cosine + crop.height * sine),
+          );
+          rotated.height = Math.max(
+            1,
+            Math.round(crop.width * sine + crop.height * cosine),
+          );
+          const context = rotated.getContext("2d", { alpha: false });
+          context.fillStyle = "white";
+          context.fillRect(0, 0, rotated.width, rotated.height);
+          context.translate(rotated.width / 2, rotated.height / 2);
+          context.rotate(radians);
+          context.drawImage(crop, -crop.width / 2, -crop.height / 2);
+          return rotated.toDataURL("image/jpeg", 0.86);
         }
         function renderStructuredResult(layout, source) {
           const output = $("dailyOutput"),
@@ -2853,26 +2887,14 @@
                 caption.textContent = block.caption;
                 figure.append(caption);
               }
-              if (block.info) {
-                const information = document.createElement("div"),
-                  label = document.createElement("h3"),
-                  text = document.createElement("p");
-                information.className = "figure-information";
-                label.textContent = block.label;
-                text.textContent = block.info;
-                information.append(label, text);
-                figure.append(information);
-              }
               output.append(figure);
-            } else if (block.info || block.caption) {
+            } else if (block.caption) {
               const aside = document.createElement("aside"),
                 label = document.createElement("h3"),
                 text = document.createElement("p");
               aside.className = "document-aside";
-              label.textContent = block.info
-                ? block.label
-                : "Bildunterschrift";
-              text.textContent = block.info || block.caption;
+              label.textContent = "Bildunterschrift";
+              text.textContent = block.caption;
               aside.append(label, text);
               output.append(aside);
             }
