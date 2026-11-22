@@ -1479,6 +1479,7 @@
           speechRegionStorage = "sehen-azure-speech-region",
           speechVoiceStorage = "sehen-azure-speech-voice",
           oneDriveClientStorage = "sehen-onedrive-client-id",
+          defaultOneDriveClientId = "6b4d0587-7f95-4c3b-89e3-23f34b689289",
           oneDriveLibraryStorage = "sehen-onedrive-library",
           activeBookStorage = "sehen-active-book",
           testImageUrl =
@@ -3807,7 +3808,7 @@
           const clientId = (
             $("oneDriveClientId").value ||
             localStorage.getItem(oneDriveClientStorage) ||
-            ""
+            defaultOneDriveClientId
           ).trim();
           if (!clientId) throw new Error("Microsoft App-ID fehlt.");
           if (!window.msal) throw new Error("Microsoft-Anmeldung konnte nicht geladen werden.");
@@ -4317,7 +4318,7 @@
         $("audibleId").value =
           localStorage.getItem("sehen-audible-id") || defaultAudible;
         $("oneDriveClientId").value =
-          localStorage.getItem(oneDriveClientStorage) || "";
+          localStorage.getItem(oneDriveClientStorage) || defaultOneDriveClientId;
         bookLibrary = savedBookLibrary();
         fillBookSelection();
         if ($("oneDriveClientId").value)
