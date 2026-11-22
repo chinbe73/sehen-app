@@ -3750,11 +3750,12 @@
               bookLibrary.books?.[0]?.id ||
               "";
           select.replaceChildren();
-          for (const book of bookLibrary.books || []) {
+          for (const [index, book] of (bookLibrary.books || []).entries()) {
             const option = document.createElement("option");
             option.value = book.id;
-            option.textContent = book.title + (book.author ? " · " + book.author : "");
-            option.selected = book.id === selected;
+            option.textContent =
+              (book.title || book.name || "Hörbuch " + (index + 1)) +
+              (book.author ? " · " + book.author : "");
             select.append(option);
           }
           if (!select.options.length) {
@@ -3762,6 +3763,16 @@
             option.value = "";
             option.textContent = "Noch keine Bücher geladen";
             select.append(option);
+          } else {
+            const value = Array.from(select.options).some(
+              (option) => option.value === selected,
+            )
+              ? selected
+              : select.options[0].value;
+            select.value = value;
+            if (select.selectedIndex < 0) select.selectedIndex = 0;
+            if (select.options.length === 1 && !localStorage.getItem(activeBookStorage))
+              localStorage.setItem(activeBookStorage, select.value);
           }
         }
         async function initializeOneDrive() {
