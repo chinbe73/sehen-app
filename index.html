@@ -3662,18 +3662,29 @@
             const root = await navigator.storage.getDirectory(),
               handle = await root.getFileHandle("hoerbuch.m4b"),
               file = await handle.getFile();
+            if (file.size < 1000000)
+              throw new Error("Der Import ist unvollständig (" + file.size + " Byte). Bitte erneut importieren.");
             if (localBookUrl) URL.revokeObjectURL(localBookUrl);
             localBookUrl = URL.createObjectURL(file);
             $("localBookAudio").src = localBookUrl;
             $("localBookPlay").disabled = false;
             setStatus(
               "localBookStatus",
-              "Bereit: " + (localStorage.getItem(localBookNameStorage) || "Hörbuch"),
+              "Bereit: " +
+                (localStorage.getItem(localBookNameStorage) || "Hörbuch") +
+                " · " +
+                (file.size / 1073741824).toFixed(2) +
+                " GB",
               "success",
             );
             return true;
-          } catch {
+          } catch (error) {
             $("localBookPlay").disabled = true;
+            setStatus(
+              "localBookStatus",
+              error.message || "Noch kein vollständiges Hörbuch importiert.",
+              "error",
+            );
             return false;
           }
         }
@@ -3884,6 +3895,15 @@
             setStatus("localBookStatus", "Abspielen fehlgeschlagen: " + error.message, "error"),
           );
           else audio.pause();
+        };
+        $("localBookAudio").onerror = () => {
+          const error = $("localBookAudio").error,
+            names = ["", "Abbruch", "Netzwerk-/Dateifehler", "Format nicht lesbar", "Format nicht unterstützt"];
+          setStatus(
+            "localBookStatus",
+            "Wiedergabefehler " + (error?.code || "?") + ": " + (names[error?.code] || error?.message || "unbekannt"),
+            "error",
+          );
         };
         $("dailyAdminClose").onclick = () => {
           $("localBookAudio").pause();
