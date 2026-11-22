@@ -1078,6 +1078,7 @@
               <summary>Diagnose</summary>
               <p id="dailyStructure" class="structure-diagnostics">Noch keine Strukturdaten vorhanden.</p>
               <button id="dailyCopyDiagnostics" class="test-action" disabled>DIAGNOSE KOPIEREN</button>
+              <button id="dailyDownloadRaw" class="test-action" disabled>AZURE-ROHDATEN LADEN</button>
             </details>
           </div>
           <div class="workflow-actions">
@@ -1529,7 +1530,8 @@
           currentChapterIndex = 0,
           currentBookFileIndex = 0,
           lastBookPositionSave = 0,
-          bookPendingSeek = null;
+          bookPendingSeek = null,
+          lastAzureAnalysis = null;
         const readJSON = (key, fallback) => {
             try {
               return (
@@ -2484,66 +2486,8 @@
             articleLength += text.length;
           }
           paragraphs.sort((a, b) => a.offset - b.offset);
-          const readingParagraphs = [];
-          let movedAsides = 0;
-          for (let index = 0; index < paragraphs.length; index++) {
-            const paragraph = paragraphs[index];
-            let rearranged = false;
-            if (
-              paragraph.role === "paragraph" &&
-              !/[.!?…:;»”)]$/.test(paragraph.text)
-            ) {
-              for (
-                let continuationIndex = index + 2;
-                continuationIndex <= Math.min(index + 4, paragraphs.length - 1);
-                continuationIndex++
-              ) {
-                const continuation = paragraphs[continuationIndex],
-                  middle = paragraphs.slice(index + 1, continuationIndex),
-                  middleText = middle.map((item) => item.text).join("\n\n"),
-                  sameLane =
-                    paragraph.center &&
-                    continuation.center &&
-                    paragraph.center.pageNumber === continuation.center.pageNumber &&
-                    Math.abs(paragraph.center.x - continuation.center.x) <
-                      (paragraph.center.page?.width || 1) * 0.2,
-                  asideLikely =
-                    /\bautor(?:in)?\b|\blehrte\b|\buniversität\b|\bfakultät\b/iu.test(
-                      middleText,
-                    ) ||
-                    middle.some(
-                      (item) =>
-                        item.center &&
-                        paragraph.center &&
-                        Math.abs(item.center.x - paragraph.center.x) >
-                          (paragraph.center.page?.width || 1) * 0.14,
-                    );
-                if (
-                  /^\p{Ll}/u.test(continuation.text) &&
-                  sameLane &&
-                  asideLikely &&
-                  middle.every((item) => /[.!?…»”)]$/.test(item.text))
-                ) {
-                  readingParagraphs.push({
-                    ...paragraph,
-                    text: repairOcrText(paragraph.text + " " + continuation.text),
-                    endOffset: continuation.endOffset,
-                    signature: paragraph.signature || continuation.signature,
-                    asideAfter: {
-                      text: middleText,
-                      offset: middle[0].offset,
-                      endOffset: middle.at(-1).endOffset,
-                    },
-                  });
-                  index = continuationIndex;
-                  movedAsides++;
-                  rearranged = true;
-                  break;
-                }
-              }
-            }
-            if (!rearranged) readingParagraphs.push(paragraph);
-          }
+          const readingParagraphs = paragraphs,
+            movedAsides = 0;
           const articleBlocks = [];
           let titleSeen = false,
             cutoffOffset = Number.MAX_SAFE_INTEGER,
@@ -2757,6 +2701,8 @@
                     readable.used +
                     "; Rollen: " +
                     readable.roles;
+                lastAzureAnalysis = analyzed;
+                $("dailyDownloadRaw").disabled = false;
                 log(diagnostics);
                 return {
                   text: readable.text,
@@ -3043,9 +2989,11 @@
             }
           }
         }
-        async function recognize(autoSpeak = false) {
+        async function recognize() {
           let text = "";
           try {
+            lastAzureAnalysis = null;
+            $("dailyDownloadRaw").disabled = true;
             $("recognize").disabled = true;
             setStatus("ocrStatus", "Dokument wird analysiert …");
             setStatus(
@@ -3072,7 +3020,7 @@
             setStatus("ocrStatus", message, text ? "success" : "warning");
             setStatus(
               "dailyStatus",
-              text ? message + " Der Text wird vorgelesen." : message,
+              message,
               text ? "success" : "warning",
             );
             log(
@@ -3081,7 +3029,6 @@
                 "; Absätze: " +
                 layout.paragraphs,
             );
-            if (autoSpeak && text) speak();
           } catch (error) {
             $("dailyStructure").textContent =
               "Erkennungsfehler: " + error.message;
@@ -4014,7 +3961,7 @@
           if (!takePhoto()) return;
           setStatus("dailyStatus", "Text wird erkannt …");
           $("dailyCapture").disabled = true;
-          await recognize(false);
+          await recognize();
           setDailyMode("result");
           $("dailyOutput").scrollTop = 0;
           $("dailyCapture").disabled = false;
@@ -4029,7 +3976,7 @@
             "Festes Testbild wird erkannt …",
             "success",
           );
-          await recognize(false);
+          await recognize();
           setDailyMode("result");
           $("dailyOutput").scrollTop = 0;
         }
@@ -4133,6 +4080,18 @@
                 "error",
               ),
             );
+        };
+        $("dailyDownloadRaw").onclick = () => {
+          if (!lastAzureAnalysis) return;
+          const blob = new Blob([JSON.stringify(lastAzureAnalysis, null, 2)], {
+              type: "application/json",
+            }),
+            url = URL.createObjectURL(blob),
+            link = document.createElement("a");
+          link.href = url;
+          link.download = "sehen-azure-rohdaten.json";
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
         };
         $("dailyBook").onclick = () =>
           openActiveBook().catch((error) =>
@@ -4252,7 +4211,7 @@
         $("magnifierFilter").onclick = () => updateMagnifierFilter(1);
         $("magnifierCamera").onclick = switchMagnifierCamera;
         $("magnifierClose").onclick = closeMagnifier;
-        $("recognize").onclick = () => recognize(false);
+        $("recognize").onclick = recognize;
         $("speak").onclick = speak;
         $("stopSpeak").onclick = stopSpeech;
         $("textSize").oninput = (event) =>
