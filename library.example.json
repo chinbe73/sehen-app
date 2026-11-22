@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-22T00:00:00Z",
+  "activeBook": "die-elenden",
+  "books": [
+    {
+      "id": "die-elenden",
+      "title": "Die Elenden",
+      "author": "Victor Hugo",
+      "cover": "die-elenden/cover.jpg",
+      "chapters": [
+        {
+          "title": "Kapitel 1",
+          "files": ["die-elenden/chapter-001-01.m4a"]
+        },
+        {
+          "title": "Kapitel 2",
+          "files": [
+            "die-elenden/chapter-002-01.m4a",
+            "die-elenden/chapter-002-02.m4a"
+          ]
+        }
+      ]
+    }
+  ]
+}
