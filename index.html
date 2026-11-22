@@ -447,6 +447,15 @@
         border-radius: 10px;
         background: #fff;
       }
+      .document-aside img {
+        display: block;
+        width: min(42%, 320px);
+        max-height: 34vh;
+        margin: 0 auto 14px;
+        object-fit: contain;
+        border-radius: 10px;
+        background: #fff;
+      }
       .document-figure figcaption {
         margin-top: 10px;
         font-size: 0.82em;
@@ -2364,6 +2373,30 @@
                 y1: Math.max(...ys),
               };
             },
+            uprightRegionBox = (region) => {
+              const polygon = region?.polygon || [],
+                page = region && pages.get(region.pageNumber);
+              if (polygon.length < 8 || !page) return null;
+              const radians = (-(page.angle || 0) * Math.PI) / 180,
+                cosine = Math.cos(radians),
+                sine = Math.sin(radians),
+                xs = [],
+                ys = [];
+              for (let index = 0; index < polygon.length; index += 2) {
+                const dx = polygon[index] - page.width / 2,
+                  dy = polygon[index + 1] - page.height / 2;
+                xs.push(cosine * dx - sine * dy + page.width / 2);
+                ys.push(sine * dx + cosine * dy + page.height / 2);
+              }
+              return {
+                pageNumber: region.pageNumber,
+                page,
+                x0: Math.min(...xs),
+                x1: Math.max(...xs),
+                y0: Math.min(...ys),
+                y1: Math.max(...ys),
+              };
+            },
             comparable = (text) =>
               (text || "")
                 .toLocaleLowerCase("de")
@@ -2412,6 +2445,7 @@
               id: figure.id || "figure-" + figureIndex,
               offset: Math.min(ownOffset, ...linkedOffsets),
               box: boxes[0] || null,
+              uprightBox: uprightRegionBox(figure.boundingRegions?.[0]),
               page: boxes[0] ? pages.get(boxes[0].pageNumber) || null : null,
               caption,
             });
@@ -2506,12 +2540,127 @@
               role: paragraph.role || "paragraph",
               signature,
               center,
+              box: uprightRegionBox(paragraph.boundingRegions?.[0]),
             });
             articleLength += text.length;
           }
           paragraphs.sort((a, b) => a.offset - b.offset);
-          const readingParagraphs = paragraphs,
-            movedAsides = 0;
+          const removedOffsets = new Set(),
+            asideBlocks = [],
+            horizontalOverlap = (first, second) =>
+              Math.max(
+                0,
+                Math.min(first.x1, second.x1) - Math.max(first.x0, second.x0),
+              );
+          for (const figure of figures) {
+            if (figure.caption || !figure.uprightBox) continue;
+            const box = figure.uprightBox,
+              candidate = paragraphs
+                .filter((paragraph) => {
+                  if (!paragraph.box || paragraph.box.pageNumber !== box.pageNumber)
+                    return false;
+                  const overlap = horizontalOverlap(box, paragraph.box),
+                    minWidth = Math.min(
+                      box.x1 - box.x0,
+                      paragraph.box.x1 - paragraph.box.x0,
+                    ),
+                    centerDistance = Math.abs(
+                      (box.x0 + box.x1) / 2 -
+                        (paragraph.box.x0 + paragraph.box.x1) / 2,
+                    ),
+                    gap = paragraph.box.y0 - box.y1;
+                  return (
+                    paragraph.offset >= figure.offset &&
+                    overlap >= minWidth * 0.45 &&
+                    centerDistance <= (box.x1 - box.x0) * 0.45 &&
+                    gap >= -box.page.height * 0.02 &&
+                    gap <= box.page.height * 0.14
+                  );
+                })
+                .sort((first, second) => first.box.y0 - second.box.y0)[0];
+            if (candidate) {
+              figure.caption = candidate.text;
+              figure.endOffset = candidate.endOffset;
+              removedOffsets.add(candidate.offset);
+            }
+          }
+          for (let index = 0; index < paragraphs.length; index++) {
+            const seed = paragraphs[index];
+            if (
+              removedOffsets.has(seed.offset) ||
+              !/\bautor(?:in)?\b/iu.test(seed.text) ||
+              !seed.box
+            )
+              continue;
+            const page = seed.box.page,
+              nearbyFigure = figures
+                .filter((figure) => figure.uprightBox && !figure.caption)
+                .map((figure) => {
+                  const box = figure.uprightBox,
+                    horizontalGap = Math.max(
+                      0,
+                      Math.max(box.x0, seed.box.x0) -
+                        Math.min(box.x1, seed.box.x1),
+                    ),
+                    verticalGap = Math.max(
+                      0,
+                      Math.max(box.y0, seed.box.y0) -
+                        Math.min(box.y1, seed.box.y1),
+                    );
+                  return { figure, horizontalGap, verticalGap };
+                })
+                .filter(
+                  (item) =>
+                    item.figure.uprightBox.pageNumber === seed.box.pageNumber &&
+                    item.horizontalGap <= page.width * 0.08 &&
+                    item.verticalGap <= page.height * 0.08,
+                )
+                .sort(
+                  (first, second) =>
+                    first.horizontalGap + first.verticalGap -
+                    second.horizontalGap - second.verticalGap,
+                )[0]?.figure;
+            if (!nearbyFigure) continue;
+            const group = [seed];
+            for (let nextIndex = index + 1; nextIndex < paragraphs.length; nextIndex++) {
+              const next = paragraphs[nextIndex],
+                previous = group.at(-1);
+              if (
+                removedOffsets.has(next.offset) ||
+                !next.center ||
+                !seed.center ||
+                next.center.pageNumber !== seed.center.pageNumber ||
+                Math.abs(next.center.x - seed.center.x) > page.width * 0.14 ||
+                next.offset - previous.endOffset > 8
+              )
+                break;
+              group.push(next);
+            }
+            let asideText = "";
+            for (const paragraph of group) {
+              if (!asideText) asideText = paragraph.text;
+              else if (
+                !/[.!?…:;»”)]$/.test(asideText) &&
+                /^\p{Ll}/u.test(paragraph.text)
+              )
+                asideText += " " + paragraph.text;
+              else asideText += "\n\n" + paragraph.text;
+              removedOffsets.add(paragraph.offset);
+            }
+            nearbyFigure.aside = true;
+            asideBlocks.push({
+              kind: "aside",
+              text: asideText,
+              offset: Math.min(seed.offset, nearbyFigure.offset),
+              endOffset: Math.max(group.at(-1).endOffset, nearbyFigure.offset),
+              signature: false,
+              figure: nearbyFigure,
+            });
+          }
+          const readingParagraphs = paragraphs.filter(
+              (paragraph) => !removedOffsets.has(paragraph.offset),
+            ),
+            movedAsides = asideBlocks.length;
           const articleBlocks = [];
           let titleSeen = false,
             cutoffOffset = Number.MAX_SAFE_INTEGER,
@@ -2573,32 +2722,28 @@
           }
           const visibleFigures = figures.filter(
               (figure) =>
+                !figure.aside &&
                 figure.offset < cutoffOffset &&
                 (figure.box || figure.caption),
             );
-          for (const figure of visibleFigures) {
-            let anchorIndex = articleBlocks.findIndex(
-              (block) => figure.offset <= block.endOffset,
-            );
-            if (anchorIndex < 0) anchorIndex = articleBlocks.length - 1;
-            if (
-              anchorIndex >= 0 &&
-              articleBlocks[anchorIndex].kind === "heading" &&
-              anchorIndex + 1 < articleBlocks.length
-            )
-              anchorIndex++;
-            figure.anchorIndex = anchorIndex;
+          const supplements = [...asideBlocks, ...visibleFigures];
+          for (const supplement of supplements) {
+            let anchorIndex = -1;
+            for (const [index, block] of articleBlocks.entries())
+              if (block.offset <= supplement.offset) anchorIndex = index;
+            if (anchorIndex < 0 && articleBlocks.length) anchorIndex = 0;
+            supplement.anchorIndex = anchorIndex;
           }
           const blocks = [];
           for (const [index, block] of articleBlocks.entries()) {
             blocks.push(block);
             blocks.push(
-              ...visibleFigures
-                .filter((figure) => figure.anchorIndex === index)
+              ...supplements
+                .filter((supplement) => supplement.anchorIndex === index)
                 .sort((a, b) => a.offset - b.offset),
             );
           }
-          if (!articleBlocks.length) blocks.push(...visibleFigures);
+          if (!articleBlocks.length) blocks.push(...supplements);
           const textParts = blocks
               .map((block) => {
                 if (block.kind !== "figure") return block.text;
@@ -2982,6 +3127,15 @@
               const aside = document.createElement("aside"),
                 paragraph = document.createElement("p");
               aside.className = "document-aside";
+              if (block.figure) {
+                const imageUrl = figureImageFromCanvas(source, block.figure);
+                if (imageUrl) {
+                  const image = document.createElement("img");
+                  image.src = imageUrl;
+                  image.alt = "Bild zu den zusätzlichen Informationen";
+                  aside.append(image);
+                }
+              }
               paragraph.textContent = block.text;
               aside.append(paragraph);
               output.append(aside);
