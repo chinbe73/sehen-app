@@ -3859,8 +3859,16 @@
           const response = await fetch("https://graph.microsoft.com/v1.0" + path, {
             headers: { Authorization: "Bearer " + token },
           });
-          if (!response.ok)
-            throw new Error("OneDrive-Fehler " + response.status + ".");
+          if (!response.ok) {
+            let detail = "";
+            try {
+              const body = await response.clone().json();
+              detail = body?.error?.message || body?.error?.code || "";
+            } catch (_) {}
+            throw new Error(
+              "OneDrive-Fehler " + response.status + (detail ? ": " + detail : "."),
+            );
+          }
           return response;
         }
         function graphAppPath(path) {
@@ -3869,8 +3877,11 @@
         }
         async function refreshOneDriveLibrary() {
           setStatus("oneDriveStatus", "Bücherliste wird geladen …");
-          const response = await graphRequest(graphAppPath("library.json") + ":/content"),
-            library = await response.json();
+          const downloadUrl = await oneDriveFileUrl("library.json"),
+            response = await fetch(downloadUrl);
+          if (!response.ok)
+            throw new Error("Bücherliste konnte nicht geladen werden (" + response.status + ").");
+          const library = await response.json();
           if (!Array.isArray(library.books))
             throw new Error("library.json enthält keine Bücherliste.");
           bookLibrary = library;
