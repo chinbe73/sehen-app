@@ -1203,6 +1203,18 @@
               <input id="oneDriveClientId" autocomplete="off" placeholder="Client-ID aus Microsoft Entra" />
             </details>
             <details class="admin-settings" open>
+              <summary>Hörbuch auf diesem iPad</summary>
+              <p id="localBookStatus" class="status" role="status">
+                Noch kein Hörbuch lokal gespeichert.
+              </p>
+              <button id="localBookDownload" type="button">
+                HÖRBUCH AUF IPAD SPEICHERN
+              </button>
+              <button id="localBookDelete" type="button" class="danger">
+                LOKALE KOPIE LÖSCHEN
+              </button>
+            </details>
+            <details class="admin-settings" open>
               <summary>Azure-Zugangsdaten</summary>
               <label for="adminDocumentKey">Dokumenterkennung-Schlüssel</label>
               <input id="adminDocumentKey" type="password" autocomplete="off" placeholder="Schlüssel auf diesem iPad speichern" />
@@ -1620,6 +1632,8 @@
           defaultOneDriveClientId = "6b4d0587-7f95-4c3b-89e3-23f34b689289",
           oneDriveLibraryStorage = "sehen-onedrive-library",
           activeBookStorage = "sehen-active-book",
+          localBookStorage = "sehen-local-books-v1",
+          localBookDatabase = "sehen-audiobooks-v1",
           testImageUrl =
             "https://chinbe73.github.io/sehen-app/testseite.jpg",
           defaultAudible =
@@ -1666,6 +1680,11 @@
           currentBookFileIndex = 0,
           lastBookPositionSave = 0,
           bookPendingSeek = null,
+          bookAudioObjectUrl = "",
+          bookCoverObjectUrl = "",
+          bookCardObjectUrls = [],
+          localBookDownloadBusy = false,
+          localBookDbPromise = null,
           lastAzureAnalysis = null;
         const readJSON = (key, fallback) => {
             try {
@@ -4011,6 +4030,281 @@
         function savedBookLibrary() {
           return readJSON(oneDriveLibraryStorage, { version: 1, books: [] });
         }
+        function localBookInfo() {
+          return readJSON(localBookStorage, {});
+        }
+        function saveLocalBookInfo(info) {
+          localStorage.setItem(localBookStorage, JSON.stringify(info));
+        }
+        function activeLibraryBook() {
+          bookLibrary = bookLibrary || savedBookLibrary();
+          const id =
+            localStorage.getItem(activeBookStorage) ||
+            bookLibrary.activeBook ||
+            bookLibrary.books?.[0]?.id;
+          return bookLibrary.books?.find((book) => book.id === id) || null;
+        }
+        function bookFilesForCache(book) {
+          return [
+            ...(book?.cover ? [book.cover] : []),
+            ...(book?.chapters || []).flatMap((chapter) => chapterFiles(chapter)),
+          ].filter((path, index, paths) => path && paths.indexOf(path) === index);
+        }
+        const formatBytes = (bytes) => {
+          if (!Number.isFinite(bytes) || bytes <= 0) return "0 MB";
+          if (bytes >= 1024 ** 3)
+            return (bytes / 1024 ** 3).toFixed(1).replace(".", ",") + " GB";
+          return Math.max(1, Math.round(bytes / 1024 ** 2)) + " MB";
+        };
+        function localBookComplete(book) {
+          const info = localBookInfo()[book?.id];
+          return Boolean(
+            info?.complete && info.total === bookFilesForCache(book).length,
+          );
+        }
+        function openLocalBookDatabase() {
+          if (!window.indexedDB)
+            return Promise.reject(
+              new Error("Der lokale Hörbuchspeicher wird nicht unterstützt."),
+            );
+          if (localBookDbPromise) return localBookDbPromise;
+          localBookDbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open(localBookDatabase, 1);
+            request.onupgradeneeded = () => {
+              const database = request.result,
+                store = database.objectStoreNames.contains("files")
+                  ? request.transaction.objectStore("files")
+                  : database.createObjectStore("files", { keyPath: "key" });
+              if (!store.indexNames.contains("bookId"))
+                store.createIndex("bookId", "bookId", { unique: false });
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () =>
+              reject(request.error || new Error("Lokaler Speicher konnte nicht geöffnet werden."));
+          });
+          return localBookDbPromise;
+        }
+        const databaseRequest = (request) =>
+          new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+        const transactionFinished = (transaction) =>
+          new Promise((resolve, reject) => {
+            transaction.oncomplete = resolve;
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () =>
+              reject(transaction.error || new Error("Speichern wurde abgebrochen."));
+          });
+        const localBookFileKey = (book, path) => book.id + "|" + path;
+        async function localBookFile(book, path) {
+          const database = await openLocalBookDatabase(),
+            transaction = database.transaction("files", "readonly");
+          return databaseRequest(
+            transaction.objectStore("files").get(localBookFileKey(book, path)),
+          );
+        }
+        async function storeLocalBookFile(book, path, blob, remote = {}) {
+          const database = await openLocalBookDatabase(),
+            transaction = database.transaction("files", "readwrite");
+          transaction.objectStore("files").put({
+            key: localBookFileKey(book, path),
+            bookId: book.id,
+            path,
+            size: blob.size,
+            blob,
+            eTag: remote.eTag || "",
+            lastModifiedDateTime: remote.lastModifiedDateTime || "",
+            storedAt: new Date().toISOString(),
+          });
+          await transactionFinished(transaction);
+        }
+        async function deleteLocalBookFiles(book) {
+          const database = await openLocalBookDatabase(),
+            transaction = database.transaction("files", "readwrite"),
+            store = transaction.objectStore("files"),
+            keys = await databaseRequest(
+              store.index("bookId").getAllKeys(IDBKeyRange.only(book.id)),
+            );
+          keys.forEach((key) => store.delete(key));
+          await transactionFinished(transaction);
+        }
+        function updateLocalBookStatus(message = "", kind = "") {
+          const book = activeLibraryBook(),
+            info = book && localBookInfo()[book.id],
+            download = $("localBookDownload"),
+            remove = $("localBookDelete");
+          download.disabled = localBookDownloadBusy || !book;
+          remove.disabled = localBookDownloadBusy || !info;
+          download.textContent = info?.complete
+            ? "LOKALE KOPIE AKTUALISIEREN"
+            : "HÖRBUCH AUF IPAD SPEICHERN";
+          if (message) return setStatus("localBookStatus", message, kind);
+          if (!book)
+            return setStatus(
+              "localBookStatus",
+              "Bitte zuerst eine Bücherliste laden.",
+              "warning",
+            );
+          if (info?.complete)
+            return setStatus(
+              "localBookStatus",
+              "Lokal bereit: " + book.title + " · " + formatBytes(info.size),
+              "success",
+            );
+          if (info)
+            return setStatus(
+              "localBookStatus",
+              "Download unvollständig: " + info.done + " von " + info.total + " Dateien. Er kann fortgesetzt werden.",
+              "warning",
+            );
+          setStatus(
+            "localBookStatus",
+            "Ausgewählt: " + (book.title || "Hörbuch") + ". Noch nicht lokal gespeichert.",
+          );
+        }
+        async function localOrOneDriveFileUrl(book, path) {
+          let cached = null;
+          try {
+            cached = await localBookFile(book, path);
+          } catch (error) {
+            log("Lokaler Hörbuchspeicher nicht verfügbar: " + error.message);
+            if (localBookComplete(book))
+              throw new Error(
+                "Die lokale Kopie kann nicht gelesen werden. Bitte die App neu öffnen oder in der Verwaltung aktualisieren.",
+              );
+          }
+          if (cached?.blob?.size)
+            return { url: URL.createObjectURL(cached.blob), local: true };
+          if (localBookComplete(book))
+            throw new Error(
+              "Die lokale Kopie ist beschädigt. Bitte in der Verwaltung aktualisieren.",
+            );
+          return { url: await oneDriveFileUrl(path), local: false };
+        }
+        async function downloadActiveBook() {
+          if (localBookDownloadBusy) return;
+          const book = activeLibraryBook();
+          if (!book)
+            return updateLocalBookStatus(
+              "Bitte zuerst Microsoft verbinden und die Bücherliste aktualisieren.",
+              "warning",
+            );
+          localBookDownloadBusy = true;
+          updateLocalBookStatus("Lokaler Download wird vorbereitet …");
+          let failure = "";
+          try {
+            const info = localBookInfo(),
+              wasComplete = Boolean(info[book.id]?.complete);
+            if (navigator.storage?.persist)
+              await navigator.storage.persist().catch(() => false);
+            const token = await oneDriveToken(true);
+            if (!token) return;
+            const files = bookFilesForCache(book);
+            if (!files.length)
+              throw new Error("Dieses Hörbuch enthält keine Dateien.");
+            let storedSize = Number(info[book.id]?.size) || 0,
+              done = Number(info[book.id]?.done) || 0;
+            for (let index = 0; index < files.length; index++) {
+              const path = files[index],
+                existing = await localBookFile(book, path);
+              if (existing?.blob?.size && !wasComplete) {
+                if (index >= done) {
+                  storedSize += existing.blob.size;
+                  done++;
+                }
+                continue;
+              }
+              updateLocalBookStatus(
+                "Datei " + (index + 1) + " von " + files.length + " wird geladen · " + formatBytes(storedSize),
+              );
+              const response = await graphRequest(graphAppPath(path)),
+                item = await response.json(),
+                fileSize = Number(item.size) || 0,
+                estimate = navigator.storage?.estimate
+                  ? await navigator.storage.estimate().catch(() => null)
+                  : null;
+              if (
+                existing?.blob?.size &&
+                existing.eTag &&
+                item.eTag &&
+                existing.eTag === item.eTag
+              )
+                continue;
+              if (
+                estimate?.quota &&
+                fileSize >
+                  (Math.max(0, estimate.quota - (estimate.usage || 0)) +
+                    (existing?.blob?.size || 0)) *
+                    0.9
+              )
+                throw new Error(
+                  "Zu wenig lokaler Speicher. Benötigt werden noch mindestens " + formatBytes(fileSize) + ".",
+                );
+              const downloadUrl = item["@microsoft.graph.downloadUrl"];
+              if (!downloadUrl)
+                throw new Error("OneDrive hat für " + path + " keine Downloadadresse geliefert.");
+              const fileResponse = await fetch(downloadUrl);
+              if (!fileResponse.ok)
+                throw new Error("Datei " + (index + 1) + " konnte nicht geladen werden.");
+              const blob = await fileResponse.blob();
+              if (!blob.size) throw new Error("OneDrive lieferte eine leere Datei.");
+              if (existing?.blob?.size) storedSize -= existing.blob.size;
+              await storeLocalBookFile(book, path, blob, item);
+              storedSize += blob.size;
+              if (!wasComplete) done = index + 1;
+              info[book.id] = {
+                title: book.title || "Hörbuch",
+                done: wasComplete ? files.length : done,
+                total: files.length,
+                size: storedSize,
+                complete: wasComplete,
+                updatedAt: new Date().toISOString(),
+              };
+              saveLocalBookInfo(info);
+            }
+            info[book.id] = {
+              title: book.title || "Hörbuch",
+              done: files.length,
+              total: files.length,
+              size: storedSize,
+              complete: true,
+              updatedAt: new Date().toISOString(),
+            };
+            saveLocalBookInfo(info);
+            renderBookLibrary();
+            updateLocalBookStatus(
+              "Hörbuch ist vollständig auf diesem iPad gespeichert · " + formatBytes(storedSize),
+              "success",
+            );
+          } catch (error) {
+            failure = "Lokaler Download: " + error.message;
+          } finally {
+            localBookDownloadBusy = false;
+            updateLocalBookStatus(failure, failure ? "error" : "");
+          }
+        }
+        async function removeActiveLocalBook() {
+          if (localBookDownloadBusy) return;
+          const book = activeLibraryBook();
+          if (!book) return;
+          localBookDownloadBusy = true;
+          updateLocalBookStatus("Lokale Kopie wird gelöscht …");
+          let failure = "";
+          try {
+            await deleteLocalBookFiles(book);
+            const info = localBookInfo();
+            delete info[book.id];
+            saveLocalBookInfo(info);
+            renderBookLibrary();
+            updateLocalBookStatus("Lokale Kopie wurde gelöscht.", "success");
+          } catch (error) {
+            failure = "Löschen fehlgeschlagen: " + error.message;
+          } finally {
+            localBookDownloadBusy = false;
+            updateLocalBookStatus(failure, failure ? "error" : "");
+          }
+        }
         function renderBookLibrary() {
           bookLibrary = bookLibrary || savedBookLibrary();
           const cards = $("bookLibraryCards"),
@@ -4019,6 +4313,8 @@
               bookLibrary.activeBook ||
               bookLibrary.books?.[0]?.id ||
               "";
+          bookCardObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+          bookCardObjectUrls = [];
           cards.replaceChildren();
           if (!bookLibrary.books?.length) {
             const empty = document.createElement("p");
@@ -4064,7 +4360,8 @@
             detail.textContent =
               (book.author ? book.author + " · " : "") +
               (chapter?.title || "Kapitel " + (chapterIndex + 1)) +
-              (Number(progress.time) > 0 ? " · FORTSETZEN" : " · NEU");
+              (Number(progress.time) > 0 ? " · FORTSETZEN" : " · NEU") +
+              (localBookComplete(book) ? " · LOKAL" : "");
             text.append(title, detail);
             card.append(image, text);
             card.onclick = () =>
@@ -4074,8 +4371,11 @@
               });
             cards.append(card);
             if (book.cover)
-              oneDriveFileUrl(book.cover)
-                .then((url) => (image.src = url))
+              localOrOneDriveFileUrl(book, book.cover)
+                .then((media) => {
+                  image.src = media.url;
+                  if (media.local) bookCardObjectUrls.push(media.url);
+                })
                 .catch(() => image.removeAttribute("src"));
           }
         }
@@ -4171,6 +4471,7 @@
           )
             localStorage.setItem(activeBookStorage, library.books[0].id);
           renderBookLibrary();
+          updateLocalBookStatus();
           setStatus(
             "oneDriveStatus",
             library.books.length + " Hörbuch/Hörbücher geladen.",
@@ -4228,8 +4529,11 @@
           if (!file) throw new Error("Für dieses Kapitel fehlt eine Audiodatei.");
           setStatus("bookStatus", "Kapitel wird geladen …");
           const audio = $("bookAudio"),
-            url = await oneDriveFileUrl(file);
-          audio.src = url;
+            media = await localOrOneDriveFileUrl(currentBook, file);
+          audio.pause();
+          if (bookAudioObjectUrl) URL.revokeObjectURL(bookAudioObjectUrl);
+          bookAudioObjectUrl = media.local ? media.url : "";
+          audio.src = media.url;
           audio.onloadedmetadata = async () => {
             if (bookPendingSeek !== null) {
               audio.currentTime = Math.max(0, Math.min(bookPendingSeek, audio.duration - 1));
@@ -4263,8 +4567,12 @@
           bookPendingSeek = Number(progress.time) || 0;
           setDailyMode("book");
           if (currentBook.cover)
-            oneDriveFileUrl(currentBook.cover)
-              .then((url) => ($("bookCover").src = url))
+            localOrOneDriveFileUrl(currentBook, currentBook.cover)
+              .then((media) => {
+                if (bookCoverObjectUrl) URL.revokeObjectURL(bookCoverObjectUrl);
+                bookCoverObjectUrl = media.local ? media.url : "";
+                $("bookCover").src = media.url;
+              })
               .catch(() => ($("bookCover").removeAttribute("src")));
           await loadBookSegment(autoplay);
         }
@@ -4420,6 +4728,7 @@
           });
         $("dailyAdmin").onclick = async () => {
           setDailyMode("admin");
+          updateLocalBookStatus();
         };
         $("adminSaveAzure").onclick = () => {
           const documentKey = $("adminDocumentKey").value.trim(),
@@ -4466,6 +4775,8 @@
           refreshOneDriveLibrary().catch((error) =>
             setStatus("oneDriveStatus", error.message, "error"),
           );
+        $("localBookDownload").onclick = downloadActiveBook;
+        $("localBookDelete").onclick = removeActiveLocalBook;
         $("dailyAdminClose").onclick = () => {
           setDailyMode("home");
           setStatus("dailyStatus", "Was möchtest du tun?");
@@ -4651,6 +4962,7 @@
         $("oneDriveClientId").value =
           localStorage.getItem(oneDriveClientStorage) || defaultOneDriveClientId;
         bookLibrary = savedBookLibrary();
+        updateLocalBookStatus();
         if ($("oneDriveClientId").value)
           initializeOneDrive()
             .then(() => {
