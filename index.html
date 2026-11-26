@@ -1526,7 +1526,8 @@
         <h2>Azure-Stimmen vergleichen</h2>
         <p>
           Die Zugangsdaten bleiben nur auf diesem iPad. Ohne gespeicherten
-          Speech-Schlüssel verwendet Sehen weiterhin die iPad-Stimme.
+          Ohne gespeicherten Speech-Schlüssel bleibt die Sprachausgabe
+          deaktiviert.
         </p>
         <label for="speechRegion">Azure-Speech-Region</label
         ><input
@@ -3007,7 +3008,29 @@
             } catch {}
           }
         }
+        function setSpeechStartControl(mode = "ready") {
+          const button = $("dailyAgain");
+          if (!button) return;
+          if (mode === "preparing") {
+            button.disabled = true;
+            button.textContent = "WIRD GESTARTET …";
+          } else if (mode === "playing") {
+            button.disabled = false;
+            button.textContent = "↻ VON VORN STARTEN";
+          } else {
+            button.disabled = !$("dailyOutput").querySelector(
+              ".speech-sentence",
+            );
+            button.textContent = "🔊 TEXT VORLESEN";
+          }
+        }
         function stopSpeech() {
+          const wasRunning = Boolean(
+            speechActive ||
+              speechRunResolve ||
+              cloudSpeechPlayer ||
+              cloudAudio,
+          );
           speechGeneration++;
           if (speechRunResolve) {
             const resolveRun = speechRunResolve;
@@ -3039,12 +3062,15 @@
           }
           highlightSpeechSentence(null);
           setSpeechControls(false);
+          setSpeechStartControl();
+          if (wasRunning)
+            log("Vorlesesitzung beendet; Generation " + speechGeneration + ".");
         }
         function pauseSpeech() {
           if (!speechActive || speechPaused) return;
           if (cloudSpeechPlayer) cloudSpeechPlayer.pause();
           else if (cloudAudio) cloudAudio.pause();
-          else speechSynthesis?.pause();
+          else return setSpeechControls(false);
           setSpeechControls(true, true);
           setStatus("dailyStatus", "Vorlesen pausiert.", "success");
         }
@@ -3059,7 +3085,7 @@
             cloudAudio.play().catch((error) =>
               log("Fortsetzen fehlgeschlagen: " + error.message),
             );
-          else speechSynthesis?.resume();
+          else return setSpeechControls(false);
           setSpeechControls(true, false);
           setStatus("dailyStatus", "Vorlesen wird fortgesetzt.", "success");
         }
@@ -3360,10 +3386,18 @@
           const settings = speechSettings();
           if (!settings.key)
             throw new Error("Azure Speech ist noch nicht eingerichtet.");
-          const SpeechSDK = await loadSpeechSdk();
           stopSpeech();
-          const generation = speechGeneration,
-            selectedVoice = voice || settings.voice,
+          const generation = speechGeneration;
+          setSpeechStartControl("preparing");
+          log("Vorlesesitzung " + generation + " wird vorbereitet.");
+          const SpeechSDK = await loadSpeechSdk();
+          if (generation !== speechGeneration) {
+            log(
+              "Vorlesesitzung " + generation + " vor dem Start verworfen.",
+            );
+            return false;
+          }
+          const selectedVoice = voice || settings.voice,
             plan = continuousSpeechPlan(
               text,
               statusId === "dailyStatus",
@@ -3450,11 +3484,22 @@
                   cloudSpeechSynthesizer = null;
                 }
                 if (cloudSpeechPlayer === player) {
+                  if (error || !value) player.pause();
                   player.close?.();
                   cloudSpeechPlayer = null;
                 }
                 highlightSpeechSentence(null);
                 setSpeechControls(false);
+                setSpeechStartControl();
+                log(
+                  "Vorlesesitzung " +
+                    generation +
+                    (error
+                      ? " mit Fehler beendet: " + error.message
+                      : value
+                        ? " vollständig beendet."
+                        : " abgebrochen."),
+                );
                 if (error) reject(error);
                 else resolve(value);
               },
@@ -3484,6 +3529,8 @@
             player.onAudioStart = () => {
               if (generation !== speechGeneration) return;
               highlightSpeechSentence(plan.segments[0]?.element || null);
+              setSpeechStartControl("playing");
+              log("Vorlesesitzung " + generation + " gibt Audio aus.");
               setStatus(statusId, "Text wird vorgelesen.", "success");
               followPlayback();
             };
@@ -3550,32 +3597,6 @@
           }
           highlightSpeechSentence(null);
           setSpeechControls(false);
-          return true;
-        }
-        function speakStructured(text) {
-          if (!("speechSynthesis" in window) || !text) return false;
-          stopSpeech();
-          const generation = speechGeneration,
-            segments = displayedSpeechSegments(text);
-          setSpeechControls(true, false);
-          let index = 0;
-          const next = () => {
-            if (generation !== speechGeneration) return;
-            if (index >= segments.length) {
-              highlightSpeechSentence(null);
-              setSpeechControls(false);
-              return;
-            }
-            const segment = segments[index++];
-            highlightSpeechSentence(segment.element);
-            const utterance = new SpeechSynthesisUtterance(segment.text);
-            utterance.lang = "de-DE";
-            utterance.rate = 0.78;
-            utterance.onend = () => setTimeout(next, 40);
-            utterance.onerror = () => setTimeout(next, 40);
-            speechSynthesis.speak(utterance);
-          };
-          next();
           return true;
         }
         function figureImageFromCanvas(source, block) {
@@ -3763,66 +3784,33 @@
         }
         async function speak() {
           const text = $("ocrOutput").textContent;
-          if (speechSettings().key) {
-            try {
-              setStatus(
-                "dailyStatus",
-                "Azure-Stimme wird vorbereitet …",
-              );
-              setStatus("ocrStatus", "Azure-Stimme wird vorbereitet …");
-              let completed = false;
-              try {
-                completed = await speakAzureContinuous(
-                  text,
-                  "",
-                  "dailyStatus",
-                );
-              } catch (continuousError) {
-                log(
-                  "Fortlaufende Azure-Sprachausgabe nicht verfügbar: " +
-                    continuousError.message,
-                );
-                completed = await speakAzure(text, "", "dailyStatus");
-              }
-              if (!completed) return;
-              setStatus(
-                "ocrStatus",
-                "Text wurde mit der Azure-Stimme vorgelesen.",
-                "success",
-              );
-              return;
-            } catch (error) {
-              log("Azure-Sprachausgabe fehlgeschlagen: " + error.message);
-              setStatus(
-                "dailyStatus",
-                "Azure-Stimme nicht verfügbar. Die iPad-Stimme wird verwendet. " +
-                  error.message,
-                "warning",
-              );
-            }
+          if (!speechSettings().key) {
+            const message = "Sprachausgabe ist noch nicht eingerichtet.";
+            setStatus("ocrStatus", message, "error");
+            return setStatus("dailyStatus", message, "error");
           }
-          if (!speakStructured(text)) {
+          try {
+            setStatus("dailyStatus", "Azure-Stimme wird vorbereitet …");
+            setStatus("ocrStatus", "Azure-Stimme wird vorbereitet …");
+            const completed = await speakAzureContinuous(
+              text,
+              "",
+              "dailyStatus",
+            );
+            if (!completed) return;
             setStatus(
               "ocrStatus",
-              "Vorlesen wird in diesem Browser nicht unterstützt.",
-              "error",
+              "Text wurde mit der Azure-Stimme vorgelesen.",
+              "success",
             );
-            return setStatus(
-              "dailyStatus",
-              "Vorlesen wird in diesem Browser nicht unterstützt.",
-              "error",
-            );
+          } catch (error) {
+            stopSpeech();
+            const message =
+              "Vorlesen konnte nicht gestartet werden: " + error.message;
+            log("Azure-Sprachausgabe fehlgeschlagen: " + error.message);
+            setStatus("dailyStatus", message, "error");
+            setStatus("ocrStatus", message, "error");
           }
-          setStatus(
-            "ocrStatus",
-            "Text wird absatzweise vorgelesen.",
-            "success",
-          );
-          setStatus(
-            "dailyStatus",
-            "Text wird mit Pausen zwischen den Absätzen vorgelesen.",
-            "success",
-          );
         }
         function createPageCapture(source) {
           const sourceWidth = source.videoWidth || source.width,
