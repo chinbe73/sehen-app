@@ -535,6 +535,11 @@
         border-radius: 16px;
         background: #eef6ff;
       }
+      .document-page-break {
+        margin: 1.2em 0;
+        border: 0;
+        border-top: 5px solid #91a7bd;
+      }
       .document-figure img {
         display: block;
         width: 100%;
@@ -731,28 +736,6 @@
         object-fit: contain;
         border-radius: 0;
       }
-      .scan-guide {
-        position: absolute;
-        inset: 6%;
-        border: 7px solid #ef2b2d;
-        border-radius: 8px;
-        pointer-events: none;
-        box-shadow: 0 0 0 9999px #00000024;
-      }
-      .scan-guide::before {
-        content: attr(data-label);
-        position: absolute;
-        top: -3px;
-        left: 50%;
-        transform: translate(-50%, -100%);
-        padding: 6px 16px;
-        background: #ef2b2d;
-        color: #fff;
-        font-weight: 900;
-        font-size: 1.1rem;
-        border-radius: 10px 10px 0 0;
-        white-space: nowrap;
-      }
       .scan-actions,
       .scan-nav {
         display: grid;
@@ -860,10 +843,6 @@
         }
         .scan-actions .capture {
           min-height: 78px;
-        }
-        .scan-guide {
-          inset: 4%;
-          border-width: 5px;
         }
         .scan-result img {
           max-height: 25vh;
@@ -1134,7 +1113,7 @@
         </p>
         <div id="dailyHome" class="daily-actions">
           <button id="dailyRead" class="read">📖 SEITE</button
-          ><button id="dailyScan" class="scan">▤ GROSSE SEITE</button
+          ><button id="dailyScan" class="scan">▤ MEHRERE SEITEN</button
           ><button id="dailyMagnifier" class="magnify">🔍 LUPE</button
           ><button id="dailyBook" class="book">🎧 HÖRBUCH</button
           ><button id="dailyAdmin" class="admin">⚙ VERWALTUNG</button>
@@ -1252,7 +1231,7 @@
     <main id="scan" class="hidden">
       <section class="panel">
         <p id="scanStatus" class="status" role="status" aria-live="assertive">
-          Grosse Seite wird vorbereitet …
+          Mehrere Seiten werden vorbereitet …
         </p>
         <progress
           id="scanProgress"
@@ -1268,47 +1247,20 @@
               playsinline
               autoplay
               muted
-              aria-label="Livebild der grossen Seite"
+              aria-label="Livebild der nächsten Seite"
             ></video>
-            <div id="scanGuide" class="scan-guide" data-label="BEREICH 1"></div>
-          </div>
-          <div
-            id="scanResultView"
-            class="workflow-main scan-result hidden"
-            tabindex="0"
-          >
-            <img id="scanResultImage" alt="Aufgenommener Seitenbereich" />
-            <div id="scanResultText" class="scan-result-text">
-              Der erkannte Text erscheint hier.
-            </div>
           </div>
           <div
             id="scanCaptureActions"
             class="workflow-actions scan-actions scan-side-actions"
           >
             <button id="scanCapture" class="capture main-action">
-              📷 BEREICH AUFNEHMEN</button
+              📷 SEITE 1 FOTOGRAFIEREN</button
             ><button id="scanTestImage" class="test-action">
-              🧪 FESTES TESTBILD VERWENDEN</button
-            ><button id="scanUndo" disabled>↶ LETZTES LÖSCHEN</button
-            ><button id="scanFinish" disabled>✓ FERTIG – ERKENNEN</button
+              🧪 TESTSEITE HINZUFÜGEN</button
+            ><button id="scanUndo" disabled>LETZTE SEITE LÖSCHEN</button
+            ><button id="scanFinish" disabled>FERTIG – TEXT ANZEIGEN</button
             ><button id="scanCancel" class="danger">← SCHLIESSEN</button>
-          </div>
-          <div
-            id="scanResultActions"
-            class="workflow-actions scan-result-actions hidden"
-          >
-            <div class="scan-nav">
-              <button id="scanPrevious">←</button
-              ><output id="scanPosition" aria-live="polite">1 / 1</output
-              ><button id="scanNext">→</button>
-            </div>
-            <div class="scan-actions">
-              <button id="scanSpeak" class="primary">🔊 BEREICH LESEN</button
-              ><button id="scanSpeakAll">🔊 ALLES LESEN</button
-              ><button id="scanNew">▤ NEUE SEITE</button
-              ><button id="scanClose" class="danger">← SCHLIESSEN</button>
-            </div>
           </div>
         </div>
       </section>
@@ -1677,7 +1629,6 @@
             ),
           ),
           scanCaptures = [],
-          scanIndex = 0,
           scanRecognizing = false,
           speechGeneration = 0,
           activeSpeechSentence = null,
@@ -3675,13 +3626,27 @@
           context.drawImage(crop, -crop.width / 2, -crop.height / 2);
           return rotated.toDataURL("image/jpeg", 0.86);
         }
-        function renderStructuredResult(layout, source) {
+        function renderStructuredResult(layout, source, append = false) {
           const output = $("dailyOutput"),
             blocks = layout.blocks || [];
-          output.replaceChildren();
-          output.classList.toggle("structured-result", Boolean(blocks.length));
+          if (!append) output.replaceChildren();
+          else {
+            const separator = document.createElement("hr");
+            separator.className = "document-page-break";
+            separator.setAttribute("aria-hidden", "true");
+            output.append(separator);
+          }
+          output.classList.toggle(
+            "structured-result",
+            Boolean(blocks.length) || append,
+          );
           if (!blocks.length) {
-            output.textContent = layout.text || "Kein Text erkannt.";
+            const paragraph = document.createElement("p");
+            appendSpeechSentences(
+              paragraph,
+              layout.text || "Kein Text erkannt.",
+            );
+            output.append(paragraph);
             return;
           }
           for (const block of blocks) {
@@ -3859,55 +3824,87 @@
             "success",
           );
         }
-        function showScanCapture() {
-          $("scanCaptureView").classList.remove("hidden");
-          $("scanResultView").classList.add("hidden");
-          $("scanCaptureActions").classList.remove("hidden");
-          $("scanResultActions").classList.add("hidden");
-          $("scanProgress").classList.add("hidden");
-          const next = scanCaptures.length + 1;
-          $("scanGuide").dataset.label = "BEREICH " + next;
-          $("scanCapture").textContent = "📷 BEREICH " + next + " AUFNEHMEN";
-          $("scanCapture").disabled = scanCaptures.length >= 8;
-          $("scanUndo").disabled = !scanCaptures.length;
-          $("scanFinish").disabled = !scanCaptures.length;
+        function createPageCapture(source) {
+          const sourceWidth = source.videoWidth || source.width,
+            sourceHeight = source.videoHeight || source.height,
+            scale = Math.min(1, 3000 / Math.max(sourceWidth, sourceHeight)),
+            canvas = document.createElement("canvas");
+          canvas.width = Math.round(sourceWidth * scale);
+          canvas.height = Math.round(sourceHeight * scale);
+          canvas
+            .getContext("2d", { alpha: false })
+            .drawImage(
+              source,
+              0,
+              0,
+              sourceWidth,
+              sourceHeight,
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+          return {
+            image: canvas.toDataURL("image/jpeg", 0.88),
+            width: canvas.width,
+            height: canvas.height,
+            layout: null,
+            raw: null,
+          };
         }
-        function sayBrief(message) {
-          if (!("speechSynthesis" in window)) return;
-          const utterance = new SpeechSynthesisUtterance(message);
-          utterance.lang = "de-CH";
-          utterance.rate = 0.9;
-          speechSynthesis.speak(utterance);
+        async function pageCanvas(image) {
+          const response = await fetch(image),
+            blob = await response.blob(),
+            bitmap = await createImageBitmap(blob),
+            canvas = document.createElement("canvas");
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          canvas
+            .getContext("2d", { alpha: false })
+            .drawImage(bitmap, 0, 0);
+          bitmap.close?.();
+          return canvas;
+        }
+        function showScanCapture() {
+          $("scanCaptureActions").classList.remove("hidden");
+          $("scanProgress").classList.add("hidden");
+          const count = scanCaptures.length,
+            next = count + 1,
+            maximum = 12;
+          $("scanCapture").textContent =
+            count >= maximum
+              ? "ZWÖLF SEITEN – BITTE FERTIG WÄHLEN"
+              : "📷 SEITE " + next + " FOTOGRAFIEREN";
+          $("scanCapture").disabled = count >= maximum;
+          $("scanUndo").disabled = !count;
+          $("scanFinish").disabled = !count;
+          setStatus(
+            "scanStatus",
+            count
+              ? count +
+                  (count === 1 ? " SEITE GESPEICHERT" : " SEITEN GESPEICHERT")
+              : "SEITE 1 FOTOGRAFIEREN",
+            "success",
+          );
         }
         async function startScan() {
           scanCaptures = [];
-          scanIndex = 0;
           scanRecognizing = false;
           document.body.classList.remove("read-open");
           $("daily").classList.add("hidden");
           $("scan").classList.remove("hidden");
           document.body.classList.add("scan-open");
           showScanCapture();
-          setStatus(
-            "scanStatus",
-            "Bereich 1 in den roten Rahmen legen.",
-            "success",
-          );
           const ok = stream || (await restoreCamera());
           if (!ok)
             return setStatus(
               "scanStatus",
-              "Kamera konnte nicht gestartet werden. USB-Verbindung und Berechtigung prüfen.",
+              "Kamera konnte nicht gestartet werden.",
               "error",
             );
           await $("scanVideo")
             .play()
             .catch(() => {});
-          setStatus(
-            "scanStatus",
-            "Bereich 1 aufnehmen. Für grosse Seiten danach mit Überlappung weiterschieben.",
-            "success",
-          );
         }
         function captureScanRegion() {
           const video = $("scanVideo");
@@ -3917,124 +3914,116 @@
               "Die Kamera ist noch nicht bereit.",
               "warning",
             );
-          if (scanCaptures.length >= 8)
-            return setStatus(
-              "scanStatus",
-              "Acht Bereiche sind erreicht. Bitte jetzt „Fertig“ wählen.",
-              "warning",
-            );
-          const inset = 0.05,
-            sourceX = Math.round(video.videoWidth * inset),
-            sourceY = Math.round(video.videoHeight * inset),
-            sourceWidth = video.videoWidth - sourceX * 2,
-            sourceHeight = video.videoHeight - sourceY * 2,
-            scale = Math.min(1, 2600 / Math.max(sourceWidth, sourceHeight)),
-            canvas = document.createElement("canvas");
-          canvas.width = Math.round(sourceWidth * scale);
-          canvas.height = Math.round(sourceHeight * scale);
-          canvas
-            .getContext("2d", { alpha: false })
-            .drawImage(
-              video,
-              sourceX,
-              sourceY,
-              sourceWidth,
-              sourceHeight,
-              0,
-              0,
-              canvas.width,
-              canvas.height,
-            );
-          scanCaptures.push({
-            image: canvas.toDataURL("image/jpeg", 0.9),
-            width: canvas.width,
-            height: canvas.height,
-            text: "",
-            columns: 1,
-          });
-          const count = scanCaptures.length,
-            next = count + 1;
-          $("scanGuide").dataset.label =
-            "BEREICH " + next + " · " + count + " GESPEICHERT";
-          $("scanCapture").textContent =
-            count >= 8
-              ? "✓ ACHT BEREICHE – FERTIG WÄHLEN"
-              : "📷 BEREICH " + next + " AUFNEHMEN";
-          $("scanCapture").disabled = count >= 8;
-          $("scanUndo").disabled = false;
-          $("scanFinish").disabled = false;
-          setStatus(
-            "scanStatus",
-            "Bereich " +
-              count +
-              " gespeichert. Seite drei Viertel weiterschieben; ein Viertel überlappen lassen.",
-            "success",
-          );
-          sayBrief("Bereich " + count + " gespeichert.");
+          if (scanCaptures.length >= 12) return;
+          const capture = createPageCapture(video);
+          scanCaptures.push(capture);
           log(
-            "Seitenbereich " +
-              count +
+            "Seite " +
+              scanCaptures.length +
               " aufgenommen: " +
-              canvas.width +
+              capture.width +
               " × " +
-              canvas.height,
+              capture.height,
           );
+          showScanCapture();
         }
         function undoScanRegion() {
           if (!scanCaptures.length) return;
           scanCaptures.pop();
           showScanCapture();
-          setStatus(
-            "scanStatus",
-            scanCaptures.length
-              ? "Letzten Bereich gelöscht. Nächsten Bereich aufnehmen."
-              : "Bereich 1 in den roten Rahmen legen.",
-            "success",
-          );
+        }
+        function repairPageBoundary(previous, current) {
+          if (!previous || !current) return;
+          const textBlocks = (layout) =>
+              (layout.blocks || []).filter(
+                (block) =>
+                  ["heading", "paragraph", "aside"].includes(block.kind) &&
+                  block.text,
+              ),
+            previousBlocks = textBlocks(previous),
+            currentBlocks = textBlocks(current),
+            last = previousBlocks.at(-1),
+            first = currentBlocks[0];
+          if (!last || !first) return;
+          const ending = last.text.match(/([\p{L}]{2,})[-¬]\s*$/u),
+            beginning = first.text.match(/^([\p{Ll}]{2,})/u);
+          if (!ending || !beginning) return;
+          last.text = last.text.replace(/[-¬]\s*$/u, "") + beginning[1];
+          first.text = first.text.slice(beginning[1].length).trimStart();
         }
         async function finishScan() {
           if (!scanCaptures.length || scanRecognizing) return;
           scanRecognizing = true;
-          stopCamera();
           $("scanCaptureActions").classList.add("hidden");
           $("scanProgress").classList.remove("hidden");
-          $("scanProgress").value = 0;
+          $("scanProgress").removeAttribute("value");
           try {
-            setStatus("scanStatus", "Dokumenterkennung wird vorbereitet …");
-            $("scanProgress").removeAttribute("value");
             for (let i = 0; i < scanCaptures.length; i++) {
               setStatus(
                 "scanStatus",
-                "Bereich " +
+                "SEITE " +
                   (i + 1) +
-                  " von " +
+                  " VON " +
                   scanCaptures.length +
-                  " wird analysiert …",
+                  " WIRD ERKANNT",
               );
-              const capture = scanCaptures[i],
-                layout = await recognizeDocumentCloud(
-                  capture.image,
-                  (message) =>
-                    setStatus(
-                      "scanStatus",
-                      "Bereich " + (i + 1) + ": " + message,
-                    ),
-                );
-              capture.text = layout.text;
-              capture.columns = layout.columns;
+              const capture = scanCaptures[i];
+              capture.layout = await recognizeDocumentCloud(
+                capture.image,
+                () => {},
+              );
+              capture.raw = lastAzureAnalysis;
+              repairPageBoundary(scanCaptures[i - 1]?.layout, capture.layout);
             }
-            scanIndex = 0;
-            renderScanResult();
+            const combinedText = scanCaptures
+                .map((capture) => capture.layout.text)
+                .filter(Boolean)
+                .join("\n\n")
+                .replace(
+                  /([\p{L}]{2,})[-¬]\s*\n+\s*([\p{Ll}]{2,})/gu,
+                  "$1$2",
+                ),
+              diagnostics = scanCaptures
+                .map(
+                  (capture, index) =>
+                    "Seite " +
+                    (index + 1) +
+                    ": " +
+                    (capture.layout.diagnostics || "erkannt"),
+                )
+                .join("\n");
+            for (let i = 0; i < scanCaptures.length; i++) {
+              const capture = scanCaptures[i],
+                canvas = await pageCanvas(capture.image);
+              renderStructuredResult(capture.layout, canvas, i > 0);
+            }
+            $("ocrOutput").textContent = combinedText || "Kein Text erkannt.";
+            $("dailyStructure").textContent = diagnostics;
+            $("speak").disabled = !combinedText;
+            $("dailyAgain").disabled = !combinedText;
+            lastAzureAnalysis = {
+              type: "multiple-pages",
+              pages: scanCaptures.map((capture) => capture.raw),
+            };
+            $("dailyDownloadRaw").disabled = false;
+            stopCamera();
+            document.body.classList.remove("scan-open");
+            $("scan").classList.add("hidden");
+            $("daily").classList.remove("hidden");
+            setDailyMode("result");
+            $("dailyOutput").scrollTop = 0;
             setStatus(
-              "scanStatus",
+              "dailyStatus",
               scanCaptures.length +
-                " Bereiche mit Dokumentstruktur erkannt. Mit Zurück und Weiter durchgehen.",
+                (scanCaptures.length === 1
+                  ? " Seite erkannt."
+                  : " Seiten erkannt."),
               "success",
             );
             log(
-              "Grosse Seite mit Azure erkannt; Bereiche: " +
-                scanCaptures.length,
+              "Mehrseitiger Text erkannt; Seiten: " + scanCaptures.length,
             );
+            scanCaptures = [];
           } catch (error) {
             setStatus(
               "scanStatus",
@@ -4049,74 +4038,11 @@
           }
         }
         async function useFixedTestForScan() {
-          if (scanRecognizing) return;
-          stopCamera();
-          setStatus("scanStatus", "Festes Testbild wird geladen …");
+          if (scanRecognizing || scanCaptures.length >= 12) return;
+          setStatus("scanStatus", "TESTSEITE WIRD GELADEN");
           if (!(await loadFixedTestImage())) return;
-          const canvas = $("photoCanvas");
-          scanCaptures = [
-            {
-              image: canvas.toDataURL("image/jpeg", 0.9),
-              width: canvas.width,
-              height: canvas.height,
-              text: "",
-              columns: 1,
-            },
-          ];
-          scanIndex = 0;
-          setStatus(
-            "scanStatus",
-            "Festes Testbild geladen. Es wird jetzt erkannt …",
-            "success",
-          );
-          await finishScan();
-        }
-        function renderScanResult() {
-          const item = scanCaptures[scanIndex];
-          if (!item) return;
-          $("scanCaptureView").classList.add("hidden");
-          $("scanCaptureActions").classList.add("hidden");
-          $("scanResultView").classList.remove("hidden");
-          $("scanResultActions").classList.remove("hidden");
-          $("scanResultImage").src = item.image;
-          $("scanResultImage").alt =
-            "Originalbild von Bereich " + (scanIndex + 1);
-          $("scanResultText").textContent =
-            item.text || "In diesem Bereich wurde kein Text erkannt.";
-          $("scanPosition").textContent =
-            scanIndex + 1 + " / " + scanCaptures.length;
-          $("scanPrevious").disabled = scanIndex === 0;
-          $("scanNext").disabled = scanIndex === scanCaptures.length - 1;
-          $("scanResultView").scrollTop = 0;
-        }
-        function moveScan(change) {
-          scanIndex = Math.max(
-            0,
-            Math.min(scanCaptures.length - 1, scanIndex + change),
-          );
-          renderScanResult();
-        }
-        function speakScan(all = false) {
-          const text = (
-            all ? scanCaptures : scanCaptures.slice(scanIndex, scanIndex + 1)
-          )
-            .map((item) => item.text)
-            .filter(Boolean)
-            .join("\n\n");
-          if (!text)
-            return setStatus(
-              "scanStatus",
-              "In diesem Bereich wurde kein Text erkannt.",
-              "warning",
-            );
-          speakStructured(text);
-          setStatus(
-            "scanStatus",
-            all
-              ? "Die ganze Seite wird absatz- und spaltenweise vorgelesen."
-              : "Dieser Bereich wird mit Absatzpausen vorgelesen.",
-            "success",
-          );
+          scanCaptures.push(createPageCapture($("photoCanvas")));
+          showScanCapture();
         }
         function closeScan() {
           stopSpeech();
@@ -5361,12 +5287,6 @@
         $("scanUndo").onclick = undoScanRegion;
         $("scanFinish").onclick = finishScan;
         $("scanCancel").onclick = closeScan;
-        $("scanPrevious").onclick = () => moveScan(-1);
-        $("scanNext").onclick = () => moveScan(1);
-        $("scanSpeak").onclick = () => speakScan(false);
-        $("scanSpeakAll").onclick = () => speakScan(true);
-        $("scanNew").onclick = startScan;
-        $("scanClose").onclick = closeScan;
         $("magnifierMinus").onclick = () => updateMagnifierZoom(-1);
         $("magnifierPlus").onclick = () => updateMagnifierZoom(1);
         $("magnifierFreeze").onclick = toggleMagnifierFreeze;
