@@ -3043,6 +3043,18 @@
           if (!button) return;
           button.disabled = !speechActive;
           button.textContent = speechPaused ? "▶ WEITER" : "⏸ PAUSE";
+          if ("mediaSession" in navigator) {
+            const bookAudio = $("bookAudio");
+            try {
+              navigator.mediaSession.playbackState = speechActive
+                ? speechPaused
+                  ? "paused"
+                  : "playing"
+                : bookAudio && !bookAudio.paused
+                  ? "playing"
+                  : "none";
+            } catch {}
+          }
         }
         function stopSpeech() {
           speechGeneration++;
@@ -3077,28 +3089,32 @@
           highlightSpeechSentence(null);
           setSpeechControls(false);
         }
+        function pauseSpeech() {
+          if (!speechActive || speechPaused) return;
+          if (cloudSpeechPlayer) cloudSpeechPlayer.pause();
+          else if (cloudAudio) cloudAudio.pause();
+          else speechSynthesis?.pause();
+          setSpeechControls(true, true);
+          setStatus("dailyStatus", "Vorlesen pausiert.", "success");
+        }
+        function resumeSpeech() {
+          if (!speechActive || !speechPaused) return;
+          if (cloudSpeechPlayer)
+            cloudSpeechPlayer.resume(
+              () => {},
+              (error) => log("Fortsetzen fehlgeschlagen: " + error),
+            );
+          else if (cloudAudio)
+            cloudAudio.play().catch((error) =>
+              log("Fortsetzen fehlgeschlagen: " + error.message),
+            );
+          else speechSynthesis?.resume();
+          setSpeechControls(true, false);
+          setStatus("dailyStatus", "Vorlesen wird fortgesetzt.", "success");
+        }
         function toggleSpeechPause() {
-          if (!speechActive) return;
-          if (speechPaused) {
-            if (cloudSpeechPlayer)
-              cloudSpeechPlayer.resume(
-                () => {},
-                (error) => log("Fortsetzen fehlgeschlagen: " + error),
-              );
-            else if (cloudAudio)
-              cloudAudio.play().catch((error) =>
-                log("Fortsetzen fehlgeschlagen: " + error.message),
-              );
-            else speechSynthesis?.resume();
-            setSpeechControls(true, false);
-            setStatus("dailyStatus", "Vorlesen wird fortgesetzt.", "success");
-          } else {
-            if (cloudSpeechPlayer) cloudSpeechPlayer.pause();
-            else if (cloudAudio) cloudAudio.pause();
-            else speechSynthesis?.pause();
-            setSpeechControls(true, true);
-            setStatus("dailyStatus", "Vorlesen pausiert.", "success");
-          }
+          if (speechPaused) resumeSpeech();
+          else pauseSpeech();
         }
         const xmlEscape = (text) =>
           text
@@ -3184,9 +3200,25 @@
         function continuousSpeechPlan(text, useDisplay = true) {
           const source = displayedSpeechSegments(text, useDisplay),
             segments = [];
-          let combined = "";
+          let combined = "",
+            previous = null;
           for (const segment of source) {
-            if (combined) combined += " ";
+            if (combined) {
+              const previousBlock = previous?.element?.parentElement,
+                currentBlock = segment.element?.parentElement,
+                newBlock =
+                  previousBlock &&
+                  currentBlock &&
+                  previousBlock !== currentBlock;
+              if (newBlock) {
+                if (
+                  previousBlock.tagName === "H2" &&
+                  !/[.!?…]$/.test(combined)
+                )
+                  combined += ".";
+                combined += "\n\n";
+              } else combined += " ";
+            }
             const start = combined.length;
             combined += segment.text;
             segments.push({
@@ -3195,6 +3227,7 @@
               end: combined.length,
               boundary: null,
             });
+            previous = segment;
           }
           return { text: combined, segments };
         }
@@ -3239,6 +3272,18 @@
           if (cloudAudioUrl) URL.revokeObjectURL(cloudAudioUrl);
           cloudAudioUrl = URL.createObjectURL(blob);
           cloudAudio = new Audio(cloudAudioUrl);
+          cloudAudio.addEventListener("pause", () => {
+            if (
+              generation === speechGeneration &&
+              speechActive &&
+              !cloudAudio.ended
+            )
+              setSpeechControls(true, true);
+          });
+          cloudAudio.addEventListener("playing", () => {
+            if (generation === speechGeneration && speechActive)
+              setSpeechControls(true, false);
+          });
           await cloudAudio.play();
           await new Promise((resolve, reject) => {
             cloudAudio.onended = resolve;
@@ -3350,6 +3395,19 @@
             boundaries = [];
           cloudSpeechPlayer = player;
           cloudSpeechSynthesizer = synthesizer;
+          const internalAudio = player.internalAudio;
+          internalAudio?.addEventListener("pause", () => {
+            if (
+              generation === speechGeneration &&
+              speechActive &&
+              !internalAudio.ended
+            )
+              setSpeechControls(true, true);
+          });
+          internalAudio?.addEventListener("playing", () => {
+            if (generation === speechGeneration && speechActive)
+              setSpeechControls(true, false);
+          });
           setSpeechControls(true, false);
           return new Promise((resolve, reject) => {
             let settled = false;
@@ -5200,6 +5258,37 @@
             setStatus("bookStatus", error.message, "error"),
           );
         };
+        $("bookAudio").addEventListener("playing", () => {
+          if (!speechActive && "mediaSession" in navigator)
+            try {
+              navigator.mediaSession.playbackState = "playing";
+            } catch {}
+        });
+        $("bookAudio").addEventListener("pause", () => {
+          if (!speechActive && "mediaSession" in navigator)
+            try {
+              navigator.mediaSession.playbackState = "paused";
+            } catch {}
+        });
+        if ("mediaSession" in navigator) {
+          try {
+            navigator.mediaSession.setActionHandler("pause", () => {
+              if (speechActive) pauseSpeech();
+              else $("bookAudio").pause();
+            });
+            navigator.mediaSession.setActionHandler("play", () => {
+              if (speechActive) resumeSpeech();
+              else
+                $("bookAudio")
+                  .play()
+                  .catch((error) =>
+                    log("Hörbuch fortsetzen fehlgeschlagen: " + error.message),
+                  );
+            });
+          } catch (error) {
+            log("Hardware-Medientasten nicht verfügbar: " + error.message);
+          }
+        }
         $("dailyPause").onclick = toggleSpeechPause;
         $("scanCapture").onclick = captureScanRegion;
         $("scanTestImage").onclick = useFixedTestForScan;
