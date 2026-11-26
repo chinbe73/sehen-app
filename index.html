@@ -3184,16 +3184,20 @@
             $("dailyOutput").querySelectorAll(".speech-sentence"),
           );
           if (useDisplay && spans.length)
-            return spans.flatMap((element) =>
-              speechChunks(element.textContent, 2400).map((text) => ({
-                text,
-                element,
-              })),
-            );
+            return spans.flatMap((element) => {
+              let searchFrom = 0;
+              return speechChunks(element.textContent, 2400).map((text) => {
+                const found = element.textContent.indexOf(text, searchFrom),
+                  elementOffset = found >= 0 ? found : searchFrom;
+                searchFrom = elementOffset + text.length;
+                return { text, element, elementOffset };
+              });
+            });
           return sentenceParts(fallbackText).flatMap((text) =>
             speechChunks(text, 2400).map((part) => ({
               text: part,
               element: null,
+              elementOffset: 0,
             })),
           );
         }
@@ -3231,25 +3235,71 @@
           }
           return { text: combined, segments };
         }
-        function highlightSpeechSentence(element) {
-          if (activeSpeechSentence === element) return;
-          if (activeSpeechSentence) {
+        function scrollToSpeechPosition(
+          element,
+          characterOffset = 0,
+          characterLength = 1,
+          force = false,
+        ) {
+          const output = $("dailyOutput"),
+            outputRect = output.getBoundingClientRect();
+          let targetRect = element.getBoundingClientRect();
+          const textNode = element.firstChild;
+          if (textNode?.nodeType === Node.TEXT_NODE && textNode.length) {
+            const start = Math.max(
+                0,
+                Math.min(Number(characterOffset) || 0, textNode.length - 1),
+              ),
+              end = Math.max(
+                start + 1,
+                Math.min(
+                  start + Math.max(1, Number(characterLength) || 1),
+                  textNode.length,
+                ),
+              ),
+              range = document.createRange();
+            range.setStart(textNode, start);
+            range.setEnd(textNode, end);
+            const wordRect = range.getBoundingClientRect();
+            if (wordRect.width || wordRect.height) targetRect = wordRect;
+          }
+          const safeTop = outputRect.top + output.clientHeight * 0.16,
+            safeBottom = outputRect.top + output.clientHeight * 0.8;
+          if (
+            !force &&
+            targetRect.top >= safeTop &&
+            targetRect.bottom <= safeBottom
+          )
+            return;
+          const top =
+            output.scrollTop +
+            targetRect.top -
+            outputRect.top -
+            output.clientHeight * 0.28;
+          output.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        }
+        function highlightSpeechSentence(
+          element,
+          characterOffset = null,
+          characterLength = 1,
+        ) {
+          const changed = activeSpeechSentence !== element;
+          if (changed && activeSpeechSentence) {
             activeSpeechSentence.classList.remove("is-speaking");
             activeSpeechSentence.removeAttribute("aria-current");
           }
           activeSpeechSentence = element || null;
           if (!element) return;
-          element.classList.add("is-speaking");
-          element.setAttribute("aria-current", "true");
-          const output = $("dailyOutput"),
-            outputRect = output.getBoundingClientRect(),
-            sentenceRect = element.getBoundingClientRect(),
-            top =
-              output.scrollTop +
-              sentenceRect.top -
-              outputRect.top -
-              (output.clientHeight - sentenceRect.height) / 2;
-          output.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+          if (changed) {
+            element.classList.add("is-speaking");
+            element.setAttribute("aria-current", "true");
+          }
+          scrollToSpeechPosition(
+            element,
+            characterOffset ?? 0,
+            characterLength,
+            changed && characterOffset === null,
+          );
         }
         function speechSettings() {
           const storedVoice = localStorage.getItem(speechVoiceStorage) || "",
@@ -3410,7 +3460,8 @@
           });
           setSpeechControls(true, false);
           return new Promise((resolve, reject) => {
-            let settled = false;
+            let settled = false,
+              activeBoundary = null;
             const followPlayback = () => {
                 if (
                   settled ||
@@ -3419,12 +3470,19 @@
                 )
                   return;
                 const seconds = Number(player.currentTime) || 0;
-                let element = plan.segments[0]?.element || null;
+                let currentBoundary = null;
                 for (const boundary of boundaries) {
                   if (boundary.time > seconds + 0.04) break;
-                  element = boundary.element;
+                  currentBoundary = boundary;
                 }
-                highlightSpeechSentence(element);
+                if (currentBoundary && currentBoundary !== activeBoundary) {
+                  activeBoundary = currentBoundary;
+                  highlightSpeechSentence(
+                    currentBoundary.element,
+                    currentBoundary.characterOffset,
+                    currentBoundary.characterLength,
+                  );
+                }
                 speechFollowAnimation = requestAnimationFrame(followPlayback);
               },
               finish = (value, error = null) => {
@@ -3456,11 +3514,19 @@
                 segment = plan.segments.find(
                   (item) => offset >= item.start && offset < item.end,
                 );
-              if (!segment || segment.boundary !== null) return;
-              segment.boundary = Number(event.audioOffset) / 10000000;
+              if (!segment) return;
+              if (
+                SpeechSDK.SpeechSynthesisBoundaryType &&
+                event.boundaryType !==
+                  SpeechSDK.SpeechSynthesisBoundaryType.Word
+              )
+                return;
               boundaries.push({
-                time: segment.boundary,
+                time: Number(event.audioOffset) / 10000000,
                 element: segment.element,
+                characterOffset:
+                  (segment.elementOffset || 0) + offset - segment.start,
+                characterLength: Math.max(1, Number(event.wordLength) || 1),
               });
               boundaries.sort((a, b) => a.time - b.time);
             };
