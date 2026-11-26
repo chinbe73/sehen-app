@@ -517,6 +517,19 @@
         font-size: 1.3em;
         line-height: 1.15;
       }
+      .speech-sentence {
+        border-radius: 0.18em;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+        transition:
+          background-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+      .speech-sentence.is-speaking {
+        background: #ffd400;
+        color: #10243a;
+        box-shadow: 0 0 0 0.12em #6b5100;
+      }
       .document-figure,
       .document-aside {
         margin: 1.2em 0;
@@ -1670,6 +1683,7 @@
           scanIndex = 0,
           scanRecognizing = false,
           speechGeneration = 0,
+          activeSpeechSentence = null,
           cloudAudio = null,
           cloudAudioUrl = "",
           oneDriveClient = null,
@@ -3030,6 +3044,7 @@
             URL.revokeObjectURL(cloudAudioUrl);
             cloudAudioUrl = "";
           }
+          highlightSpeechSentence(null);
         }
         const xmlEscape = (text) =>
           text
@@ -3063,6 +3078,75 @@
           if (current) chunks.push(current);
           return chunks;
         }
+        function sentenceParts(text) {
+          const clean = (text || "").replace(/\s+/g, " ").trim();
+          if (!clean) return [];
+          if (typeof Intl?.Segmenter === "function") {
+            return Array.from(
+              new Intl.Segmenter("de", { granularity: "sentence" }).segment(
+                clean,
+              ),
+              (part) => part.segment.trim(),
+            ).filter(Boolean);
+          }
+          return (
+            clean.match(/[^.!?…]+(?:[.!?…]+[»”\"']?|$)/g) || [clean]
+          )
+            .map((part) => part.trim())
+            .filter(Boolean);
+        }
+        function appendSpeechSentences(node, text) {
+          const parts = sentenceParts(text);
+          if (!parts.length) {
+            node.textContent = text;
+            return;
+          }
+          parts.forEach((part, index) => {
+            if (index) node.append(document.createTextNode(" "));
+            const span = document.createElement("span");
+            span.className = "speech-sentence";
+            span.textContent = part;
+            node.append(span);
+          });
+        }
+        function displayedSpeechSegments(fallbackText = "", useDisplay = true) {
+          const spans = Array.from(
+            $("dailyOutput").querySelectorAll(".speech-sentence"),
+          );
+          if (useDisplay && spans.length)
+            return spans.flatMap((element) =>
+              speechChunks(element.textContent, 2400).map((text) => ({
+                text,
+                element,
+              })),
+            );
+          return sentenceParts(fallbackText).flatMap((text) =>
+            speechChunks(text, 2400).map((part) => ({
+              text: part,
+              element: null,
+            })),
+          );
+        }
+        function highlightSpeechSentence(element) {
+          if (activeSpeechSentence === element) return;
+          if (activeSpeechSentence) {
+            activeSpeechSentence.classList.remove("is-speaking");
+            activeSpeechSentence.removeAttribute("aria-current");
+          }
+          activeSpeechSentence = element || null;
+          if (!element) return;
+          element.classList.add("is-speaking");
+          element.setAttribute("aria-current", "true");
+          const output = $("dailyOutput"),
+            outputRect = output.getBoundingClientRect(),
+            sentenceRect = element.getBoundingClientRect(),
+            top =
+              output.scrollTop +
+              sentenceRect.top -
+              outputRect.top -
+              (output.clientHeight - sentenceRect.height) / 2;
+          output.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        }
         function speechSettings() {
           const storedVoice = localStorage.getItem(speechVoiceStorage) || "",
             voice =
@@ -3094,6 +3178,39 @@
               reject(new Error("Die Azure-Audiodatei konnte nicht abgespielt werden."));
           });
         }
+        async function azureSpeechAudio(text, selectedVoice, settings) {
+          const ssml =
+              '<speak version="1.0" xml:lang="de-DE"><voice name="' +
+              selectedVoice +
+              '"><s>' +
+              xmlEscape(text) +
+              "</s></voice></speak>",
+            response = await fetch(
+              "https://" +
+                settings.region +
+                ".tts.speech.microsoft.com/cognitiveservices/v1",
+              {
+                method: "POST",
+                headers: {
+                  "Ocp-Apim-Subscription-Key": settings.key,
+                  "Content-Type": "application/ssml+xml",
+                  "X-Microsoft-OutputFormat":
+                    "audio-24khz-48kbitrate-mono-mp3",
+                },
+                body: ssml,
+                cache: "no-store",
+              },
+            );
+          if (!response.ok) {
+            const detail = (await response.text()).trim();
+            throw new Error(
+              "Azure Speech meldet " +
+                response.status +
+                (detail ? ": " + detail.slice(0, 180) : "."),
+            );
+          }
+          return response.blob();
+        }
         async function speakAzure(text, voice, statusId = "dailyStatus") {
           const settings = speechSettings();
           if (!settings.key)
@@ -3101,79 +3218,61 @@
           stopSpeech();
           const generation = speechGeneration,
             selectedVoice = voice || settings.voice,
-            chunks = speechChunks(text);
+            segments = displayedSpeechSegments(
+              text,
+              statusId === "dailyStatus",
+            );
+          if (!segments.length) return false;
           localStorage.setItem(speechVoiceStorage, selectedVoice);
-          for (let index = 0; index < chunks.length; index++) {
+          const prepareAudio = (segment) =>
+            azureSpeechAudio(segment.text, selectedVoice, settings).then(
+              (blob) => ({ blob }),
+              (error) => ({ error }),
+            );
+          let pendingAudio = prepareAudio(segments[0]);
+          for (let index = 0; index < segments.length; index++) {
             if (generation !== speechGeneration) return false;
-            const chunk = chunks[index],
-              paragraphs = chunk
-                .split(/\n{2,}/)
-                .map(
-                  (paragraph) =>
-                    "<p><s>" + xmlEscape(paragraph) + "</s></p>",
-                )
-                .join('<break time="650ms"/>'),
-              ssml =
-                '<speak version="1.0" xml:lang="de-DE"><voice name="' +
-                selectedVoice +
-                '">' +
-                paragraphs +
-                "</voice></speak>",
-              response = await fetch(
-                "https://" +
-                  settings.region +
-                  ".tts.speech.microsoft.com/cognitiveservices/v1",
-                {
-                  method: "POST",
-                  headers: {
-                    "Ocp-Apim-Subscription-Key": settings.key,
-                    "Content-Type": "application/ssml+xml",
-                    "X-Microsoft-OutputFormat":
-                      "audio-24khz-48kbitrate-mono-mp3",
-                  },
-                  body: ssml,
-                  cache: "no-store",
-                },
-              );
-            if (!response.ok) {
-              const detail = (await response.text()).trim();
-              throw new Error(
-                "Azure Speech meldet " +
-                  response.status +
-                  (detail ? ": " + detail.slice(0, 180) : "."),
-              );
-            }
-            const audio = await response.blob();
+            const prepared = await pendingAudio;
+            if (generation !== speechGeneration) return false;
+            if (prepared.error) throw prepared.error;
+            pendingAudio =
+              index + 1 < segments.length
+                ? prepareAudio(segments[index + 1])
+                : null;
+            highlightSpeechSentence(segments[index].element);
             setStatus(
               statusId,
-              "Azure-Stimme liest Abschnitt " +
+              "Azure-Stimme liest Satz " +
                 (index + 1) +
                 " von " +
-                chunks.length +
+                segments.length +
                 ".",
               "success",
             );
-            await playAudioBlob(audio, generation);
+            await playAudioBlob(prepared.blob, generation);
           }
+          highlightSpeechSentence(null);
           return true;
         }
         function speakStructured(text) {
           if (!("speechSynthesis" in window) || !text) return false;
           stopSpeech();
           const generation = speechGeneration,
-            paragraphs = text
-              .split(/\n{2,}/)
-              .map((part) => part.trim())
-              .filter(Boolean);
+            segments = displayedSpeechSegments(text);
           let index = 0;
           const next = () => {
-            if (generation !== speechGeneration || index >= paragraphs.length)
+            if (generation !== speechGeneration) return;
+            if (index >= segments.length) {
+              highlightSpeechSentence(null);
               return;
-            const utterance = new SpeechSynthesisUtterance(paragraphs[index++]);
+            }
+            const segment = segments[index++];
+            highlightSpeechSentence(segment.element);
+            const utterance = new SpeechSynthesisUtterance(segment.text);
             utterance.lang = "de-DE";
             utterance.rate = 0.78;
-            utterance.onend = () => setTimeout(next, 500);
-            utterance.onerror = () => setTimeout(next, 250);
+            utterance.onend = () => setTimeout(next, 180);
+            utterance.onerror = () => setTimeout(next, 180);
             speechSynthesis.speak(utterance);
           };
           next();
@@ -3239,13 +3338,13 @@
           for (const block of blocks) {
             if (block.kind === "heading") {
               const heading = document.createElement("h2");
-              heading.textContent = block.text;
+              appendSpeechSentences(heading, block.text);
               output.append(heading);
               continue;
             }
             if (block.kind === "paragraph") {
               const paragraph = document.createElement("p");
-              paragraph.textContent = block.text;
+              appendSpeechSentences(paragraph, block.text);
               output.append(paragraph);
               continue;
             }
@@ -3262,7 +3361,7 @@
                   aside.append(image);
                 }
               }
-              paragraph.textContent = block.text;
+              appendSpeechSentences(paragraph, block.text);
               aside.append(paragraph);
               output.append(aside);
               continue;
@@ -3277,7 +3376,7 @@
               figure.append(image);
               if (block.caption) {
                 const caption = document.createElement("figcaption");
-                caption.textContent = block.caption;
+                appendSpeechSentences(caption, block.caption);
                 figure.append(caption);
               }
               output.append(figure);
@@ -3287,7 +3386,7 @@
                 text = document.createElement("p");
               aside.className = "document-aside";
               label.textContent = "Bildunterschrift";
-              text.textContent = block.caption;
+              appendSpeechSentences(text, block.caption);
               aside.append(label, text);
               output.append(aside);
             }
