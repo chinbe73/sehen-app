@@ -593,6 +593,8 @@
         border-radius: 18px;
         display: grid;
         place-items: center;
+        touch-action: none;
+        cursor: grab;
       }
       .magnifier-stage video {
         width: 100%;
@@ -600,8 +602,23 @@
         max-height: none;
         object-fit: contain;
         border-radius: 0;
-        transform: scale(var(--magnifier-zoom, 1));
+        transform: translate3d(
+            var(--magnifier-pan-x, 0px),
+            var(--magnifier-pan-y, 0px),
+            0
+          )
+          scale(var(--magnifier-zoom, 1));
+        transform-origin: center;
         transition: transform 0.15s;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-user-drag: none;
+      }
+      .magnifier-stage.is-panning {
+        cursor: grabbing;
+      }
+      .magnifier-stage.is-panning video {
+        transition: none;
       }
       .magnifier-stage video.filter-bw {
         filter: grayscale(1) contrast(2.2);
@@ -1281,7 +1298,7 @@
             playsinline
             autoplay
             muted
-            aria-label="Vergrößertes Livebild"
+            aria-label="Vergrößertes Livebild. Mit einem Finger verschiebbar."
           ></video>
         </div>
         <div class="magnifier-sidebar">
@@ -1622,6 +1639,11 @@
           cameraBusy = false,
           magnifierZoomIndex = 0,
           magnifierFrozen = false,
+          magnifierPanX = 0,
+          magnifierPanY = 0,
+          magnifierPointerId = null,
+          magnifierDragOffsetX = 0,
+          magnifierDragOffsetY = 0,
           magnifierFilterIndex = Math.max(
             0,
             Math.min(
@@ -4249,6 +4271,55 @@
             "audibleStatus",
           );
         };
+        function magnifierPanLimits() {
+          const stage = $("magnifierVideo").parentElement,
+            zoom = magnifierZoomLevels[magnifierZoomIndex];
+          return {
+            x: (stage.clientWidth * Math.max(0, zoom - 1)) / 2,
+            y: (stage.clientHeight * Math.max(0, zoom - 1)) / 2,
+          };
+        }
+        function applyMagnifierPan() {
+          const video = $("magnifierVideo"),
+            limits = magnifierPanLimits();
+          magnifierPanX = Math.max(-limits.x, Math.min(limits.x, magnifierPanX));
+          magnifierPanY = Math.max(-limits.y, Math.min(limits.y, magnifierPanY));
+          video.style.setProperty("--magnifier-pan-x", magnifierPanX + "px");
+          video.style.setProperty("--magnifier-pan-y", magnifierPanY + "px");
+        }
+        function resetMagnifierPan() {
+          magnifierPanX = 0;
+          magnifierPanY = 0;
+          applyMagnifierPan();
+        }
+        function startMagnifierPan(event) {
+          if (
+            magnifierPointerId !== null ||
+            magnifierZoomLevels[magnifierZoomIndex] <= 1
+          )
+            return;
+          magnifierPointerId = event.pointerId;
+          magnifierDragOffsetX = event.clientX - magnifierPanX;
+          magnifierDragOffsetY = event.clientY - magnifierPanY;
+          const stage = event.currentTarget;
+          stage.classList.add("is-panning");
+          stage.setPointerCapture?.(event.pointerId);
+          event.preventDefault();
+        }
+        function moveMagnifierPan(event) {
+          if (event.pointerId !== magnifierPointerId) return;
+          magnifierPanX = event.clientX - magnifierDragOffsetX;
+          magnifierPanY = event.clientY - magnifierDragOffsetY;
+          applyMagnifierPan();
+          event.preventDefault();
+        }
+        function endMagnifierPan(event) {
+          if (event.pointerId !== magnifierPointerId) return;
+          magnifierPointerId = null;
+          event.currentTarget.classList.remove("is-panning");
+          if (event.currentTarget.hasPointerCapture?.(event.pointerId))
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         function updateMagnifierZoom(change = 0) {
           magnifierZoomIndex = Math.max(
             0,
@@ -4259,6 +4330,8 @@
           );
           const zoom = magnifierZoomLevels[magnifierZoomIndex];
           $("magnifierVideo").style.setProperty("--magnifier-zoom", zoom);
+          if (zoom === 1) resetMagnifierPan();
+          else applyMagnifierPan();
           $("magnifierZoom").textContent = zoom + "×";
           $("magnifierMinus").disabled = magnifierZoomIndex === 0;
           $("magnifierPlus").disabled =
@@ -4309,6 +4382,7 @@
             .catch(() => {});
           setStatus("magnifierStatus", "Gespeicherte Kamera wird gestartet …");
           magnifierFrozen = false;
+          resetMagnifierPan();
           $("magnifierFreeze").textContent = "❄ BILD ANHALTEN";
           updateMagnifierFilter(0);
           const ok = stream || (await restoreCamera());
@@ -4378,6 +4452,8 @@
         function closeMagnifier() {
           stopCamera();
           magnifierFrozen = false;
+          magnifierPointerId = null;
+          resetMagnifierPan();
           document.body.classList.remove("magnifier-open");
           if (document.fullscreenElement)
             document.exitFullscreen?.().catch(() => {});
@@ -5280,6 +5356,21 @@
         $("magnifierFreeze").onclick = toggleMagnifierFreeze;
         $("magnifierFilter").onclick = () => updateMagnifierFilter(1);
         $("magnifierClose").onclick = closeMagnifier;
+        const magnifierStage = $("magnifierVideo").parentElement;
+        magnifierStage.onpointerdown = startMagnifierPan;
+        magnifierStage.onpointermove = moveMagnifierPan;
+        magnifierStage.onpointerup = endMagnifierPan;
+        magnifierStage.onpointercancel = endMagnifierPan;
+        magnifierStage.onlostpointercapture = (event) => {
+          if (event.pointerId === magnifierPointerId) {
+            magnifierPointerId = null;
+            magnifierStage.classList.remove("is-panning");
+          }
+        };
+        window.addEventListener("resize", () => {
+          if (document.body.classList.contains("magnifier-open"))
+            applyMagnifierPan();
+        });
         $("recognize").onclick = recognize;
         $("speak").onclick = speak;
         $("stopSpeak").onclick = stopSpeech;
