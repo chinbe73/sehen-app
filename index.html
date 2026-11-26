@@ -521,14 +521,11 @@
         border-radius: 0.18em;
         -webkit-box-decoration-break: clone;
         box-decoration-break: clone;
-        transition:
-          background-color 160ms ease,
-          box-shadow 160ms ease;
+        transition: background-color 160ms ease;
       }
       .speech-sentence.is-speaking {
         background: #ffd400;
         color: #10243a;
-        box-shadow: 0 0 0 0.12em #6b5100;
       }
       .document-figure,
       .document-aside {
@@ -1172,7 +1169,7 @@
             <button id="dailyAgain" class="primary" disabled>
               🔊 TEXT VORLESEN</button
             ><button id="dailyNewText">📷 NEUEN TEXT LESEN</button
-            ><button id="dailyStop" class="danger">■ VORLESEN STOPPEN</button
+            ><button id="dailyPause" disabled>⏸ PAUSE</button
             ><button id="dailyResultClose" class="danger">SCHLIESSEN</button>
           </div>
         </div>
@@ -1684,6 +1681,13 @@
           scanRecognizing = false,
           speechGeneration = 0,
           activeSpeechSentence = null,
+          speechActive = false,
+          speechPaused = false,
+          speechRunResolve = null,
+          speechFollowAnimation = 0,
+          speechSdkPromise = null,
+          cloudSpeechPlayer = null,
+          cloudSpeechSynthesizer = null,
           cloudAudio = null,
           cloudAudioUrl = "",
           oneDriveClient = null,
@@ -3032,8 +3036,34 @@
             }).catch(() => {});
           }
         }
+        function setSpeechControls(active, paused = false) {
+          speechActive = Boolean(active);
+          speechPaused = speechActive && Boolean(paused);
+          const button = $("dailyPause");
+          if (!button) return;
+          button.disabled = !speechActive;
+          button.textContent = speechPaused ? "▶ WEITER" : "⏸ PAUSE";
+        }
         function stopSpeech() {
           speechGeneration++;
+          if (speechRunResolve) {
+            const resolveRun = speechRunResolve;
+            speechRunResolve = null;
+            resolveRun(false);
+          }
+          if (speechFollowAnimation) {
+            cancelAnimationFrame(speechFollowAnimation);
+            speechFollowAnimation = 0;
+          }
+          if (cloudSpeechSynthesizer) {
+            cloudSpeechSynthesizer.close();
+            cloudSpeechSynthesizer = null;
+          }
+          if (cloudSpeechPlayer) {
+            cloudSpeechPlayer.pause();
+            cloudSpeechPlayer.close?.();
+            cloudSpeechPlayer = null;
+          }
           speechSynthesis?.cancel();
           if (cloudAudio) {
             cloudAudio.pause();
@@ -3045,6 +3075,30 @@
             cloudAudioUrl = "";
           }
           highlightSpeechSentence(null);
+          setSpeechControls(false);
+        }
+        function toggleSpeechPause() {
+          if (!speechActive) return;
+          if (speechPaused) {
+            if (cloudSpeechPlayer)
+              cloudSpeechPlayer.resume(
+                () => {},
+                (error) => log("Fortsetzen fehlgeschlagen: " + error),
+              );
+            else if (cloudAudio)
+              cloudAudio.play().catch((error) =>
+                log("Fortsetzen fehlgeschlagen: " + error.message),
+              );
+            else speechSynthesis?.resume();
+            setSpeechControls(true, false);
+            setStatus("dailyStatus", "Vorlesen wird fortgesetzt.", "success");
+          } else {
+            if (cloudSpeechPlayer) cloudSpeechPlayer.pause();
+            else if (cloudAudio) cloudAudio.pause();
+            else speechSynthesis?.pause();
+            setSpeechControls(true, true);
+            setStatus("dailyStatus", "Vorlesen pausiert.", "success");
+          }
         }
         const xmlEscape = (text) =>
           text
@@ -3126,6 +3180,23 @@
               element: null,
             })),
           );
+        }
+        function continuousSpeechPlan(text, useDisplay = true) {
+          const source = displayedSpeechSegments(text, useDisplay),
+            segments = [];
+          let combined = "";
+          for (const segment of source) {
+            if (combined) combined += " ";
+            const start = combined.length;
+            combined += segment.text;
+            segments.push({
+              ...segment,
+              start,
+              end: combined.length,
+              boundary: null,
+            });
+          }
+          return { text: combined, segments };
         }
         function highlightSpeechSentence(element) {
           if (activeSpeechSentence === element) return;
@@ -3211,6 +3282,156 @@
           }
           return response.blob();
         }
+        function loadSpeechSdk() {
+          if (window.SpeechSDK) return Promise.resolve(window.SpeechSDK);
+          if (speechSdkPromise) return speechSdkPromise;
+          speechSdkPromise = new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src =
+              "https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1.53.0/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js";
+            script.onload = () =>
+              window.SpeechSDK
+                ? resolve(window.SpeechSDK)
+                : reject(
+                    new Error("Das Azure-Sprachmodul ist nicht verfügbar."),
+                  );
+            script.onerror = () =>
+              reject(
+                new Error("Das Azure-Sprachmodul konnte nicht geladen werden."),
+              );
+            document.head.append(script);
+          }).catch((error) => {
+            speechSdkPromise = null;
+            throw error;
+          });
+          return speechSdkPromise;
+        }
+        async function speakAzureContinuous(
+          text,
+          voice,
+          statusId = "dailyStatus",
+        ) {
+          const settings = speechSettings();
+          if (!settings.key)
+            throw new Error("Azure Speech ist noch nicht eingerichtet.");
+          const SpeechSDK = await loadSpeechSdk();
+          stopSpeech();
+          const generation = speechGeneration,
+            selectedVoice = voice || settings.voice,
+            plan = continuousSpeechPlan(
+              text,
+              statusId === "dailyStatus",
+            );
+          if (!plan.text) return false;
+          localStorage.setItem(speechVoiceStorage, selectedVoice);
+          const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+            settings.key,
+            settings.region,
+          );
+          speechConfig.speechSynthesisVoiceName = selectedVoice;
+          speechConfig.speechSynthesisOutputFormat =
+            SpeechSDK.SpeechSynthesisOutputFormat
+              .Audio24Khz48KBitRateMonoMp3;
+          if (
+            SpeechSDK.PropertyId &&
+            SpeechSDK.PropertyId.SpeechServiceResponse_RequestSentenceBoundary
+          )
+            speechConfig.setProperty(
+              SpeechSDK.PropertyId
+                .SpeechServiceResponse_RequestSentenceBoundary,
+              "true",
+            );
+          const player = new SpeechSDK.SpeakerAudioDestination(),
+            audioConfig = SpeechSDK.AudioConfig.fromSpeakerOutput(player),
+            synthesizer = new SpeechSDK.SpeechSynthesizer(
+              speechConfig,
+              audioConfig,
+            ),
+            boundaries = [];
+          cloudSpeechPlayer = player;
+          cloudSpeechSynthesizer = synthesizer;
+          setSpeechControls(true, false);
+          return new Promise((resolve, reject) => {
+            let settled = false;
+            const followPlayback = () => {
+                if (
+                  settled ||
+                  generation !== speechGeneration ||
+                  cloudSpeechPlayer !== player
+                )
+                  return;
+                const seconds = Number(player.currentTime) || 0;
+                let element = plan.segments[0]?.element || null;
+                for (const boundary of boundaries) {
+                  if (boundary.time > seconds + 0.04) break;
+                  element = boundary.element;
+                }
+                highlightSpeechSentence(element);
+                speechFollowAnimation = requestAnimationFrame(followPlayback);
+              },
+              finish = (value, error = null) => {
+                if (settled) return;
+                settled = true;
+                if (speechFollowAnimation) {
+                  cancelAnimationFrame(speechFollowAnimation);
+                  speechFollowAnimation = 0;
+                }
+                if (speechRunResolve === cancelRun)
+                  speechRunResolve = null;
+                if (cloudSpeechSynthesizer === synthesizer) {
+                  synthesizer.close();
+                  cloudSpeechSynthesizer = null;
+                }
+                if (cloudSpeechPlayer === player) {
+                  player.close?.();
+                  cloudSpeechPlayer = null;
+                }
+                highlightSpeechSentence(null);
+                setSpeechControls(false);
+                if (error) reject(error);
+                else resolve(value);
+              },
+              cancelRun = () => finish(false);
+            speechRunResolve = cancelRun;
+            synthesizer.wordBoundary = (_sender, event) => {
+              const offset = Number(event.textOffset) || 0,
+                segment = plan.segments.find(
+                  (item) => offset >= item.start && offset < item.end,
+                );
+              if (!segment || segment.boundary !== null) return;
+              segment.boundary = Number(event.audioOffset) / 10000000;
+              boundaries.push({
+                time: segment.boundary,
+                element: segment.element,
+              });
+              boundaries.sort((a, b) => a.time - b.time);
+            };
+            player.onAudioStart = () => {
+              if (generation !== speechGeneration) return;
+              highlightSpeechSentence(plan.segments[0]?.element || null);
+              setStatus(statusId, "Text wird vorgelesen.", "success");
+              followPlayback();
+            };
+            player.onAudioEnd = () => finish(true);
+            synthesizer.speakTextAsync(
+              plan.text,
+              (result) => {
+                if (
+                  result.reason !==
+                  SpeechSDK.ResultReason.SynthesizingAudioCompleted
+                )
+                  finish(
+                    false,
+                    new Error(
+                      result.errorDetails ||
+                        "Azure konnte den Text nicht vorlesen.",
+                    ),
+                  );
+              },
+              (error) => finish(false, new Error(String(error))),
+            );
+          });
+        }
         async function speakAzure(text, voice, statusId = "dailyStatus") {
           const settings = speechSettings();
           if (!settings.key)
@@ -3224,6 +3445,7 @@
             );
           if (!segments.length) return false;
           localStorage.setItem(speechVoiceStorage, selectedVoice);
+          setSpeechControls(true, false);
           const prepareAudio = (segment) =>
             azureSpeechAudio(segment.text, selectedVoice, settings).then(
               (blob) => ({ blob }),
@@ -3252,6 +3474,7 @@
             await playAudioBlob(prepared.blob, generation);
           }
           highlightSpeechSentence(null);
+          setSpeechControls(false);
           return true;
         }
         function speakStructured(text) {
@@ -3259,11 +3482,13 @@
           stopSpeech();
           const generation = speechGeneration,
             segments = displayedSpeechSegments(text);
+          setSpeechControls(true, false);
           let index = 0;
           const next = () => {
             if (generation !== speechGeneration) return;
             if (index >= segments.length) {
               highlightSpeechSentence(null);
+              setSpeechControls(false);
               return;
             }
             const segment = segments[index++];
@@ -3271,8 +3496,8 @@
             const utterance = new SpeechSynthesisUtterance(segment.text);
             utterance.lang = "de-DE";
             utterance.rate = 0.78;
-            utterance.onend = () => setTimeout(next, 180);
-            utterance.onerror = () => setTimeout(next, 180);
+            utterance.onend = () => setTimeout(next, 40);
+            utterance.onerror = () => setTimeout(next, 40);
             speechSynthesis.speak(utterance);
           };
           next();
@@ -3456,7 +3681,21 @@
                 "Azure-Stimme wird vorbereitet …",
               );
               setStatus("ocrStatus", "Azure-Stimme wird vorbereitet …");
-              await speakAzure(text, "", "dailyStatus");
+              let completed = false;
+              try {
+                completed = await speakAzureContinuous(
+                  text,
+                  "",
+                  "dailyStatus",
+                );
+              } catch (continuousError) {
+                log(
+                  "Fortlaufende Azure-Sprachausgabe nicht verfügbar: " +
+                    continuousError.message,
+                );
+                completed = await speakAzure(text, "", "dailyStatus");
+              }
+              if (!completed) return;
               setStatus(
                 "ocrStatus",
                 "Text wurde mit der Azure-Stimme vorgelesen.",
@@ -4736,10 +4975,6 @@
           setDailyMode("home");
           setStatus("dailyStatus", "Was möchtest du tun?");
         }
-        function dailyStop() {
-          stopSpeech();
-          setStatus("dailyStatus", "Vorlesen gestoppt.", "success");
-        }
         $("dailyRead").onclick = startDailyCamera;
         $("dailyCapture").onclick = captureDailyText;
         $("dailyTestImage").onclick = readFixedTestDaily;
@@ -4965,7 +5200,7 @@
             setStatus("bookStatus", error.message, "error"),
           );
         };
-        $("dailyStop").onclick = dailyStop;
+        $("dailyPause").onclick = toggleSpeechPause;
         $("scanCapture").onclick = captureScanRegion;
         $("scanTestImage").onclick = useFixedTestForScan;
         $("scanUndo").onclick = undoScanRegion;
