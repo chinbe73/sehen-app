@@ -2890,7 +2890,7 @@
               .join(", "),
           };
         }
-        async function recognizeDocumentCloud(image, onStage = () => {}) {
+        async function recognizeDocumentCloud(image, onStage = () => {}, signal) {
           onStage("Dokument wird direkt mit Azure analysiert …");
           const blob = await imageBlob(image),
             key = azureKey(),
@@ -2905,6 +2905,7 @@
               },
               body: blob,
               cache: "no-store",
+              signal,
             });
           log(
             "Azure-Anfrage: " +
@@ -2958,6 +2959,7 @@
               const poll = await fetch(operationLocation, {
                   headers: { "Ocp-Apim-Subscription-Key": key },
                   cache: "no-store",
+                  signal,
                 }),
                 result = await poll.json();
               if (!poll.ok || result.status === "failed")
@@ -3888,6 +3890,7 @@
           $("scanCapture").disabled = count >= maximum;
           $("scanUndo").disabled = !count;
           $("scanFinish").disabled = !count;
+          $("scanFinish").textContent = "FERTIG – TEXT ANZEIGEN";
           setStatus(
             "scanStatus",
             count
@@ -3966,25 +3969,38 @@
           scanRecognizing = true;
           $("scanCaptureActions").classList.add("hidden");
           $("scanProgress").classList.remove("hidden");
-          $("scanProgress").removeAttribute("value");
+          $("scanProgress").value = 0;
+          const count = scanCaptures.length;
+          let stage = "Texterkennung";
           try {
-            for (let i = 0; i < scanCaptures.length; i++) {
-              setStatus(
-                "scanStatus",
-                "SEITE " +
-                  (i + 1) +
-                  " VON " +
-                  scanCaptures.length +
-                  " WIRD ERKANNT",
-              );
+            for (let i = 0; i < count; i++) {
+              stage = "Seite " + (i + 1) + " von " + count;
+              setStatus("scanStatus", stage + " wird erkannt …");
               const capture = scanCaptures[i];
-              capture.layout = await recognizeDocumentCloud(
-                capture.image,
-                () => {},
-              );
-              capture.raw = lastAzureAnalysis;
-              repairPageBoundary(scanCaptures[i - 1]?.layout, capture.layout);
+              if (!capture.layout) {
+                const controller = new AbortController(),
+                  timeout = setTimeout(() => controller.abort(), 45000);
+                try {
+                  capture.layout = await recognizeDocumentCloud(
+                    capture.image,
+                    undefined,
+                    controller.signal,
+                  );
+                  capture.raw = lastAzureAnalysis;
+                } finally {
+                  clearTimeout(timeout);
+                }
+              }
+              $("scanProgress").value = ((i + 1) / (count + 1)) * 100;
             }
+            stage = "Textanzeige";
+            setStatus("scanStatus", "Text wird zum Lesen vorbereitet …");
+            const layouts = scanCaptures.map(({ layout }) => ({
+              ...layout,
+              blocks: (layout.blocks || []).map((block) => ({ ...block })),
+            }));
+            for (let i = 1; i < count; i++)
+              repairPageBoundary(layouts[i - 1], layouts[i]);
             const combinedText = scanCaptures
                 .map((capture) => capture.layout.text)
                 .filter(Boolean)
@@ -4002,10 +4018,17 @@
                     (capture.layout.diagnostics || "erkannt"),
                 )
                 .join("\n");
-            for (let i = 0; i < scanCaptures.length; i++) {
+            for (let i = 0; i < count; i++) {
               const capture = scanCaptures[i],
-                canvas = await pageCanvas(capture.image);
-              renderStructuredResult(capture.layout, canvas, i > 0);
+                hasImages = layouts[i].blocks.some(
+                  (block) => block.kind === "figure" || block.figure,
+                ),
+                canvas = hasImages ? await pageCanvas(capture.image) : null;
+              try {
+                renderStructuredResult(layouts[i], canvas, i > 0);
+              } finally {
+                if (canvas) canvas.width = canvas.height = 0;
+              }
             }
             $("ocrOutput").textContent = combinedText || "Kein Text erkannt.";
             $("dailyStructure").textContent = diagnostics;
@@ -4035,12 +4058,15 @@
             );
             scanCaptures = [];
           } catch (error) {
+            showScanCapture();
+            $("scanFinish").textContent = "ERNEUT VERSUCHEN";
             setStatus(
               "scanStatus",
-              "Texterkennung fehlgeschlagen: " + error.message,
+              stage + ": " +
+                (error.name === "AbortError" ? "Zeitlimit erreicht." : error.message) +
+                " Die Fotos bleiben für einen neuen Versuch in dieser Ansicht.",
               "error",
             );
-            showScanCapture();
           } finally {
             scanRecognizing = false;
             $("scanProgress").classList.add("hidden");
